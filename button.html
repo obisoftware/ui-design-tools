@@ -1,0 +1,2814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Component UI — Buttons, Navbars, Sidebars & Footers</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#12151d; --panel-2:#171b25; --panel-3:#1b2130;
+    --line:#242a38; --line-2:#2e3648; --text:#e6e9f0; --muted:#8b93a7;
+    --muted-2:#6b7488; --accent:#6ea8fe; --accent-2:#a06eff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 800px at 75% -15%, #1a2036 0%, transparent 60%),
+      radial-gradient(900px 700px at 0% 100%, #1a1430 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  button,input,select{font:inherit;color:inherit}
+  .app{display:flex;flex-direction:column;height:100vh}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:14px;padding:10px 18px;
+    border-bottom:1px solid var(--line);background:rgba(18,21,29,.75);
+    backdrop-filter:blur(14px);flex:0 0 auto;flex-wrap:wrap;
+  }
+  .brand{
+    font-weight:700;letter-spacing:.3px;font-size:15px;
+    display:flex;align-items:center;gap:9px;white-space:nowrap;
+  }
+  .brand .dot{
+    width:20px;height:20px;border-radius:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 0 18px rgba(110,168,254,.45);
+  }
+  .hint{color:var(--muted);font-size:12.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hint b{color:#b9c2d6;font-weight:600}
+  .theme-toggle{
+    display:flex;background:var(--panel-2);border:1px solid var(--line-2);
+    border-radius:9px;padding:3px;gap:2px;
+  }
+  .theme-toggle button{
+    background:none;border:none;padding:6px 12px;font-size:12px;
+    border-radius:6px;cursor:pointer;color:var(--muted);transition:.15s;
+    display:flex;align-items:center;gap:6px;
+  }
+  .theme-toggle button svg{width:13px;height:13px}
+  .theme-toggle button:hover{color:var(--text)}
+  .theme-toggle button.active{
+    background:var(--panel-3);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+
+  /* ---------- layout ---------- */
+  .layout{
+    flex:1;min-height:0;display:grid;
+    grid-template-columns:320px minmax(0,1fr) 460px;
+  }
+  .sidebar,.code-panel{
+    background:var(--panel);overflow-y:auto;overscroll-behavior:contain;
+  }
+  .sidebar{border-right:1px solid var(--line);padding:0 0 30px}
+  .code-panel{border-left:1px solid var(--line);display:flex;flex-direction:column}
+  .sidebar::-webkit-scrollbar,.code-panel::-webkit-scrollbar{width:9px}
+  .sidebar::-webkit-scrollbar-thumb,.code-panel::-webkit-scrollbar-thumb{
+    background:#242a38;border-radius:9px;border:2px solid var(--panel);
+  }
+
+  /* ---------- category tabs ---------- */
+  .cat-tabs{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:14px;
+    border-bottom:1px solid var(--line);position:sticky;top:0;
+    background:var(--panel);z-index:5;
+  }
+  .cat-tab{
+    background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;
+    padding:10px 4px;cursor:pointer;font-size:10.5px;transition:.15s;
+    color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:5px;
+  }
+  .cat-tab svg{width:15px;height:15px}
+  .cat-tab:hover{color:var(--text)}
+  .cat-tab.active{
+    background:rgba(110,168,254,.13);border-color:rgba(110,168,254,.5);
+    color:var(--accent);font-weight:600;
+  }
+
+  .section{padding:16px 18px;border-bottom:1px solid var(--line)}
+  .section h3{
+    margin:0 0 12px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted-2);font-weight:600;
+    display:flex;align-items:center;gap:7px;
+  }
+  .section h3 svg{width:12px;height:12px}
+
+  .style-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .style-btn{
+    background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;
+    padding:9px 8px;cursor:pointer;font-size:11.5px;color:var(--muted);
+    transition:.15s;text-align:left;display:flex;flex-direction:column;gap:4px;
+    min-height:54px;
+  }
+  .style-btn:hover{border-color:var(--accent);background:var(--panel-3);color:var(--text)}
+  .style-btn.active{
+    background:rgba(110,168,254,.13);border-color:var(--accent);
+    color:var(--text);box-shadow:0 0 0 1px rgba(110,168,254,.25);
+  }
+  .style-btn .label{font-weight:600;font-size:11.5px}
+  .style-btn.active .label{color:var(--accent)}
+  .style-btn .desc{font-size:10px;color:var(--muted-2);line-height:1.3}
+  .style-btn.active .desc{color:var(--muted)}
+
+  /* theme grid */
+  .theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .theme-btn{
+    background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;
+    padding:7px 6px;cursor:pointer;font-size:10.5px;color:var(--muted);
+    transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .theme-btn:hover{border-color:var(--accent);background:var(--panel-3);color:var(--text)}
+  .theme-btn.active{
+    border-color:var(--accent);color:var(--accent);
+    box-shadow:0 0 0 1px rgba(110,168,254,.25);
+  }
+  .theme-swatch{display:flex;gap:2px;width:100%}
+  .theme-swatch div{flex:1;height:12px}
+  .theme-swatch div:first-child{border-radius:4px 0 0 4px}
+  .theme-swatch div:last-child{border-radius:0 4px 4px 0}
+
+  /* ---------- controls ---------- */
+  .color-row{
+    display:flex;align-items:center;gap:11px;padding:6px 4px;border-radius:8px;
+  }
+  .color-row input[type=color]{
+    -webkit-appearance:none;appearance:none;width:28px;height:28px;
+    border:none;border-radius:7px;background:none;cursor:pointer;padding:0;flex:0 0 auto;
+  }
+  .color-row input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .color-row input[type=color]::-webkit-color-swatch{
+    border:2px solid var(--line-2);border-radius:7px;
+  }
+  .color-row input[type=color]::-moz-color-swatch{
+    border:2px solid var(--line-2);border-radius:7px;
+  }
+  .color-row .info{flex:1;min-width:0}
+  .color-row .name{font-size:12px;color:var(--text);line-height:1.2}
+  .color-row .hex{
+    font-size:10.5px;color:var(--muted-2);font-variant-numeric:tabular-nums;
+    font-family:ui-monospace,monospace;margin-top:2px;
+  }
+
+  .range-row{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;color:var(--muted);margin-bottom:5px;margin-top:6px;
+  }
+  .range-row .val{
+    color:var(--text);font-variant-numeric:tabular-nums;font-weight:600;font-size:12.5px;
+  }
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;
+    border-radius:4px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    outline:none;margin:2px 0 10px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:#fff;border:2px solid #1a2036;cursor:grab;
+    box-shadow:0 2px 6px rgba(0,0,0,.5);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:#fff;
+    border:2px solid #1a2036;cursor:grab;
+  }
+
+  .field-select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line-2);
+    border-radius:9px;padding:8px 11px;font-size:12.5px;outline:none;
+    cursor:pointer;transition:.15s;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' fill='none' stroke='%238b93a7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;background-position:right 11px center;
+    padding-right:32px;margin-bottom:8px;
+  }
+  .field-select:hover{border-color:var(--accent)}
+  .field-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(110,168,254,.15)}
+  .field-select option{background:#12151d;color:#e6e9f0}
+
+  .switch{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;padding:8px 0;font-size:12.5px;
+  }
+  .switch label{cursor:pointer;flex:1}
+  .switch label .lbl{font-weight:500}
+  .switch label .desc{font-size:10.5px;color:var(--muted-2);margin-top:2px;line-height:1.4}
+  .switch input{display:none}
+  .track{
+    width:38px;height:22px;border-radius:99px;background:#242a38;
+    position:relative;transition:.2s;flex:0 0 auto;cursor:pointer;
+  }
+  .track::after{
+    content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;
+    border-radius:50%;background:#7c879e;transition:.2s;
+  }
+  .switch input:checked + .track{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  }
+  .switch input:checked + .track::after{left:19px;background:#fff}
+
+  .segmented{
+    display:flex;background:var(--panel-2);border:1px solid var(--line-2);
+    border-radius:9px;padding:3px;gap:2px;margin-bottom:10px;
+  }
+  .segmented button{
+    flex:1;background:none;border:none;padding:6px 4px;font-size:11.5px;
+    border-radius:6px;cursor:pointer;color:var(--muted);transition:.15s;
+  }
+  .segmented button:hover{color:var(--text)}
+  .segmented button.active{background:var(--panel-3);color:var(--text)}
+
+  .btn-row{display:flex;gap:7px;margin-top:6px}
+  .btn-mini{
+    flex:1;background:var(--panel-2);border:1px solid var(--line-2);
+    border-radius:9px;padding:9px;font-size:12px;cursor:pointer;
+    color:var(--muted);transition:.15s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .btn-mini:hover{border-color:var(--accent);color:var(--text)}
+  .btn-mini.danger:hover{border-color:#f87171;color:#f87171}
+  .btn-mini svg{width:13px;height:13px}
+
+  /* ---------- main preview ---------- */
+  .main{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--panel-2)}
+  .main-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px;border-bottom:1px solid var(--line);
+    background:var(--panel);flex:0 0 auto;gap:12px;flex-wrap:wrap;
+  }
+  .main-head .title{
+    font-size:12px;color:var(--muted);
+    display:flex;align-items:center;gap:7px;
+  }
+  .main-head .title .dot{
+    width:6px;height:6px;border-radius:50%;background:#4ade80;
+    box-shadow:0 0 6px #4ade80;
+  }
+
+  .viewport-toggle{
+    display:flex;background:var(--panel-2);border:1px solid var(--line-2);
+    border-radius:9px;padding:3px;gap:2px;
+  }
+  .viewport-toggle button{
+    background:none;border:none;padding:5px 10px;font-size:11.5px;
+    border-radius:6px;cursor:pointer;color:var(--muted);transition:.15s;
+    display:flex;align-items:center;gap:6px;
+  }
+  .viewport-toggle button svg{width:13px;height:13px}
+  .viewport-toggle button:hover{color:var(--text)}
+  .viewport-toggle button.active{background:var(--panel-3);color:var(--text)}
+
+  .preview-stage{
+    flex:1;min-height:0;overflow:auto;padding:24px;
+    display:flex;justify-content:center;align-items:flex-start;
+    background:radial-gradient(900px 600px at 50% 0%, rgba(110,168,254,.05), transparent 60%);
+  }
+  #previewFrame{
+    border:none;background:#f5f7fb;border-radius:14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.4);
+    transition:width .25s ease;max-width:100%;min-height:600px;width:100%;
+  }
+  #previewFrame[data-viewport="tablet"]{width:768px; max-width:100%}
+  #previewFrame[data-viewport="mobile"]{width:390px; max-width:100%}
+
+  /* ---------- code panel ---------- */
+  .code-head{padding:14px 16px 0;flex:0 0 auto}
+  .code-head h3{
+    margin:0 0 11px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted-2);font-weight:600;
+  }
+  .tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{
+    background:var(--panel-2);border:1px solid var(--line-2);
+    padding:6px 10px;border-radius:8px;font-size:11.5px;cursor:pointer;
+    transition:.15s;color:var(--muted);
+  }
+  .tab:hover{color:var(--text)}
+  .tab.active{
+    background:rgba(110,168,254,.13);border-color:rgba(110,168,254,.5);
+    color:var(--accent);
+  }
+  .code-wrap{
+    flex:1;min-height:0;padding:0 16px 12px;
+    display:flex;flex-direction:column;
+  }
+  pre{
+    flex:1;margin:0;background:#0c0f16;border:1px solid var(--line);
+    border-radius:10px;padding:14px;overflow:auto;
+    font:11.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#b9c9e8;white-space:pre;tab-size:2;
+  }
+  pre::-webkit-scrollbar{height:9px;width:9px}
+  pre::-webkit-scrollbar-thumb{background:#242a38;border-radius:9px}
+  pre .cm{color:#5d6a85;font-style:italic}
+  pre .sel{color:#ffcb6b}
+  pre .prop{color:#82aaff}
+  pre .val{color:#a5e075}
+  pre .at{color:#c792ea}
+  pre .num{color:#f78c6c}
+  pre .kw{color:#c792ea}
+  pre .tag{color:#f07178}
+  pre .attr{color:#ffcb6b}
+  pre .str{color:#a5e075}
+
+  .code-foot{padding:0 16px 16px;flex:0 0 auto;display:flex;gap:8px}
+  .copy-btn{
+    flex:1;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border:none;color:#080b12;font-weight:700;padding:11px;border-radius:10px;
+    font-size:13px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:.15s;
+  }
+  .copy-btn:hover{filter:brightness(1.1)}
+  .copy-btn svg{width:15px;height:15px}
+  .copy-btn.secondary{
+    flex:0 0 auto;background:var(--panel-2);border:1px solid var(--line-2);
+    color:var(--muted);padding:11px 14px;
+  }
+  .copy-btn.secondary:hover{border-color:var(--accent);color:var(--text)}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:26px;
+    transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#080b12;font-weight:700;font-size:13px;
+    padding:10px 20px;border-radius:11px;
+    box-shadow:0 10px 30px rgba(110,168,254,.4);
+    opacity:0;pointer-events:none;transition:.25s;z-index:100;
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:15px;height:15px}
+
+  @media (max-width:1280px){
+    .layout{grid-template-columns:290px minmax(0,1fr) 420px}
+  }
+  @media (max-width:1080px){
+    body{overflow:auto}
+    .app{height:auto;min-height:100vh}
+    .layout{grid-template-columns:1fr;height:auto}
+    .sidebar{border:none;border-bottom:1px solid var(--line)}
+    .code-panel{border:none;border-top:1px solid var(--line)}
+    #previewFrame{height:600px}
+    pre{max-height:400px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>Component&nbsp;UI</div>
+    <div class="hint"><b>Pick</b> a category · <b>Choose</b> a style · <b>Customize</b> · <b>Copy</b> production-ready code</div>
+    <div class="theme-toggle" id="themeToggle">
+      <button class="active" data-theme="light">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        Light
+      </button>
+      <button data-theme="dark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        Dark
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="cat-tabs">
+        <button class="cat-tab active" data-cat="buttons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="10" x="3" y="7" rx="3"/></svg>
+          Buttons
+        </button>
+        <button class="cat-tab" data-cat="navbars">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="6" x="3" y="4" rx="2"/><path d="M3 14h18"/><path d="M3 18h18"/></svg>
+          Navbars
+        </button>
+        <button class="cat-tab" data-cat="sidebars">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+          Sidebars
+        </button>
+        <button class="cat-tab" data-cat="footers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18"/><path d="M3 14h18"/><path d="M3 20h18"/></svg>
+          Footers
+        </button>
+      </div>
+      <div id="sideContent"></div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <div class="title"><span class="dot"></span>Live preview · <span id="styleName">Solid</span></div>
+        <div class="viewport-toggle" id="viewportToggle">
+          <button class="active" data-w="desktop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Desktop
+          </button>
+          <button data-w="tablet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            Tablet
+          </button>
+          <button data-w="mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg>
+            Mobile
+          </button>
+        </div>
+      </div>
+      <div class="preview-stage">
+        <iframe id="previewFrame" data-viewport="desktop" title="Preview"></iframe>
+      </div>
+    </main>
+
+    <aside class="code-panel">
+      <div class="code-head">
+        <h3>Generated code</h3>
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="css">CSS</button>
+          <button class="tab" data-tab="html">HTML</button>
+          <button class="tab" data-tab="full">Full page</button>
+          <button class="tab" data-tab="tailwind">Tailwind</button>
+        </div>
+      </div>
+      <div class="code-wrap"><pre id="code">Generating…</pre></div>
+      <div class="code-foot">
+        <button class="copy-btn" id="copyBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          Copy code
+        </button>
+        <button class="copy-btn secondary" id="downloadBtn" title="Download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toastMsg">Copied!</span>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* =========================================================
+   THEMES
+   ========================================================= */
+const THEMES = {
+  default: { label: "Default", swatch:["#6ea8fe","#a06eff","#0f172a"], tokens:{
+    primary:"#6ea8fe", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#f8fafc",
+    text:"#0f172a", textMuted:"#64748b", border:"#e2e8f0"
+  }},
+  stripe: { label: "Stripe", swatch:["#635bff","#00d4ff","#0a2540"], tokens:{
+    primary:"#635bff", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#f6f8fb",
+    text:"#0a2540", textMuted:"#697386", border:"#e3e8ee"
+  }},
+  linear: { label: "Linear", swatch:["#5e6ad2","#8b5cf6","#0d0e10"], tokens:{
+    primary:"#5e6ad2", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#f7f8f9",
+    text:"#0d0e10", textMuted:"#6b6f76", border:"#e6e8eb"
+  }},
+  vercel: { label: "Vercel", swatch:["#0070f3","#000000","#111111"], tokens:{
+    primary:"#0070f3", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#fafafa",
+    text:"#111111", textMuted:"#666666", border:"#eaeaea"
+  }},
+  material: { label: "Material", swatch:["#1976d2","#dc004e","#212121"], tokens:{
+    primary:"#1976d2", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#f5f5f5",
+    text:"#212121", textMuted:"#757575", border:"#e0e0e0"
+  }},
+  emerald: { label: "Emerald", swatch:["#10b981","#059669","#064e3b"], tokens:{
+    primary:"#10b981", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#f0fdf4",
+    text:"#064e3b", textMuted:"#6b7280", border:"#d1fae5"
+  }},
+  sunset: { label: "Sunset", swatch:["#f97316","#ef4444","#7c2d12"], tokens:{
+    primary:"#f97316", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#fff7ed",
+    text:"#7c2d12", textMuted:"#9a3412", border:"#fed7aa"
+  }},
+  violet: { label: "Violet", swatch:["#8b5cf6","#ec4899","#1e1b4b"], tokens:{
+    primary:"#8b5cf6", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#faf5ff",
+    text:"#1e1b4b", textMuted:"#6b7280", border:"#e9d5ff"
+  }},
+  rose: { label: "Rose", swatch:["#f43f5e","#ec4899","#4c0519"], tokens:{
+    primary:"#f43f5e", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#fff1f2",
+    text:"#4c0519", textMuted:"#9f1239", border:"#fecdd3"
+  }}
+};
+
+const DENSITY = {
+  compact:     { btnPadX:14, btnPadY:8,  navPad:8,  itemPadX:12, itemPadY:8,  footPadY:40, label:"Compact" },
+  comfortable: { btnPadX:18, btnPadY:10, navPad:12, itemPadX:14, itemPadY:10, footPadY:60, label:"Comfortable" },
+  spacious:    { btnPadX:24, btnPadY:14, navPad:16, itemPadX:18, itemPadY:14, footPadY:80, label:"Spacious" }
+};
+
+const DEFAULT_TOKENS = {
+  primary:"#6ea8fe", primaryFg:"#ffffff", surface:"#ffffff", surface2:"#f8fafc",
+  text:"#0f172a", textMuted:"#64748b", border:"#e2e8f0",
+  radius:10, borderWidth:1, shadow:"md", blur:12,
+  duration:200, ease:"cubic-bezier(0.4, 0, 0.2, 1)",
+  fontFamily:"system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  fontSize:14, fontWeight:500,
+  density:"comfortable"
+};
+
+const DEFAULT_FEATURES = {
+  buttons: { showIcon: true, showSizes: true, showVariants: true, showStates: true, rounded: false },
+  navbars: { sticky: true, showSearch: true, showCTA: true, showAvatar: true, blur: false },
+  sidebars: { showUser: true, showBadges: true, showSearch: true, showFooter: true, collapsed: false },
+  footers: { showNewsletter: true, showSocial: true, showLogo: true, showBottom: true, columns: 3 }
+};
+
+const state = {
+  category: "buttons", styleId: "solid",
+  previewTheme: "light", viewport: "desktop", codeTab: "css",
+  tokens: { ...DEFAULT_TOKENS },
+  features: JSON.parse(JSON.stringify(DEFAULT_FEATURES)),
+  activeTheme: "default"
+};
+
+const SHADOWS = {
+  none:"none",
+  sm:"0 1px 2px rgba(15,23,42,.05)",
+  md:"0 4px 12px rgba(15,23,42,.08)",
+  lg:"0 10px 25px rgba(15,23,42,.10), 0 4px 10px rgba(15,23,42,.05)",
+  xl:"0 20px 40px rgba(15,23,42,.14), 0 8px 20px rgba(15,23,42,.08)"
+};
+
+/* =========================================================
+   PRESETS — BUTTONS
+   ========================================================= */
+const BTN_BASE = (t, d) => `/* Base button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: ${d.btnPadY}px ${d.btnPadX}px;
+  font-family: var(--f-sans);
+  font-size: ${t.fontSize}px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: ${t.radius}px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  transition: all var(--dur) var(--ease);
+  -webkit-font-smoothing: antialiased;
+}
+.btn svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.btn:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.btn:disabled,
+.btn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}`;
+
+const BTN_SIZES = (t, d) => `/* Button sizes */
+.btn-sm { padding: ${Math.max(6, d.btnPadY - 4)}px ${Math.max(10, d.btnPadX - 6)}px; font-size: ${t.fontSize - 2}px; border-radius: ${Math.max(4, t.radius - 4)}px; }
+.btn-lg { padding: ${d.btnPadY + 4}px ${d.btnPadX + 8}px; font-size: ${t.fontSize + 2}px; border-radius: ${t.radius + 2}px; }`;
+
+const BUTTONS = {
+  solid: {
+    label:"Solid", desc:"Filled background",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Solid */
+.btn-solid {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  box-shadow: 0 1px 2px rgba(15,23,42,.08);
+}
+.btn-solid:hover {
+  background: color-mix(in srgb, var(--c-primary) 88%, black);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--c-primary) 50%, transparent);
+}
+.btn-solid:active { transform: translateY(0); }`,
+    html:(t,f) => `<button class="btn btn-solid">Get started</button>`
+  },
+  outline: {
+    label:"Outline", desc:"Border only",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Outline */
+.btn-outline {
+  background: transparent;
+  color: var(--c-primary);
+  border: ${t.borderWidth + 1}px solid var(--c-primary);
+}
+.btn-outline:hover {
+  background: color-mix(in srgb, var(--c-primary) 8%, transparent);
+  transform: translateY(-1px);
+}`,
+    html:(t,f) => `<button class="btn btn-outline">Get started</button>`
+  },
+  ghost: {
+    label:"Ghost", desc:"No border, subtle bg",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Ghost */
+.btn-ghost {
+  background: transparent;
+  color: var(--c-text);
+}
+.btn-ghost:hover {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+}`,
+    html:(t,f) => `<button class="btn btn-ghost">Get started</button>`
+  },
+  gradient: {
+    label:"Gradient", desc:"Two-tone gradient",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Gradient */
+.btn-gradient {
+  background: linear-gradient(135deg,
+    var(--c-primary),
+    color-mix(in srgb, var(--c-primary) 50%, #a06eff));
+  color: var(--c-primary-fg);
+  box-shadow: 0 1px 2px rgba(15,23,42,.08);
+}
+.btn-gradient:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--c-primary) 60%, transparent);
+  filter: brightness(1.05);
+}`,
+    html:(t,f) => `<button class="btn btn-gradient">Get started</button>`
+  },
+  soft: {
+    label:"Soft", desc:"Tinted background",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Soft */
+.btn-soft {
+  background: color-mix(in srgb, var(--c-primary) 14%, transparent);
+  color: var(--c-primary);
+}
+.btn-soft:hover {
+  background: color-mix(in srgb, var(--c-primary) 22%, transparent);
+}`,
+    html:(t,f) => `<button class="btn btn-soft">Get started</button>`
+  },
+  "3d": {
+    label:"3D", desc:"Raised, presses down",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* 3D */
+.btn-3d {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  box-shadow: 0 ${Math.max(3, Math.floor(t.radius/3))}px 0 color-mix(in srgb, var(--c-primary) 65%, black);
+  transform: translateY(-1px);
+}
+.btn-3d:hover { filter: brightness(1.06); }
+.btn-3d:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--c-primary) 65%, black);
+}`,
+    html:(t,f) => `<button class="btn btn-3d">Get started</button>`
+  },
+  pill: {
+    label:"Pill", desc:"Fully rounded",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Pill */
+.btn-pill {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  border-radius: 999px;
+  padding: ${d.btnPadY}px ${d.btnPadX + 8}px;
+}
+.btn-pill:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--c-primary) 50%, transparent);
+}`,
+    html:(t,f) => `<button class="btn btn-pill">Get started</button>`
+  },
+  glass: {
+    label:"Glass", desc:"Frosted blur",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Glass */
+.btn-glass {
+  background: color-mix(in srgb, var(--c-primary) 15%, rgba(255,255,255,.15));
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  color: var(--c-primary-fg);
+  border: 1px solid color-mix(in srgb, white 30%, transparent);
+}
+.btn-glass:hover {
+  background: color-mix(in srgb, var(--c-primary) 30%, rgba(255,255,255,.15));
+  transform: translateY(-1px);
+}`,
+    html:(t,f) => `<button class="btn btn-glass">Get started</button>`
+  },
+  neumorphic: {
+    label:"Neumorphic", desc:"Soft dual shadow",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Neumorphic */
+.btn-neumorphic {
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow:
+    6px 6px 12px rgba(15,23,42,.08),
+    -6px -6px 12px rgba(255,255,255,.9);
+}
+.btn-neumorphic:hover {
+  box-shadow:
+    4px 4px 8px rgba(15,23,42,.10),
+    -4px -4px 8px rgba(255,255,255,.9);
+  transform: translateY(-1px);
+}
+.btn-neumorphic:active {
+  box-shadow:
+    inset 4px 4px 8px rgba(15,23,42,.08),
+    inset -4px -4px 8px rgba(255,255,255,.9);
+  transform: translateY(0);
+}`,
+    html:(t,f) => `<button class="btn btn-neumorphic">Get started</button>`
+  },
+  icon: {
+    label:"Icon", desc:"Square icon button",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Icon button */
+.btn-icon {
+  padding: ${d.btnPadY}px;
+  width: ${d.btnPadY * 2 + 22}px;
+  height: ${d.btnPadY * 2 + 22}px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+}
+.btn-icon:hover {
+  background: var(--c-surface-2);
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}`,
+    html:(t,f) => `<button class="btn btn-icon" aria-label="Add">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+</button>`
+  },
+  "icon-label": {
+    label:"Icon + Label", desc:"With leading icon",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Icon + label */
+.btn-icon-label {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+}
+.btn-icon-label:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--c-primary) 50%, transparent);
+}
+.btn-icon-label .arrow {
+  transition: transform var(--dur) var(--ease);
+}
+.btn-icon-label:hover .arrow {
+  transform: translateX(3px);
+}`,
+    html:(t,f) => `<button class="btn btn-icon-label">
+  <span>Get started</span>
+  <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+</button>`
+  },
+  loading: {
+    label:"Loading", desc:"With spinner",
+    css:(t,f,d) => `${BTN_BASE(t,d)}
+
+/* Loading button */
+.btn-loading {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  pointer-events: none;
+  position: relative;
+}
+.btn-loading .spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }`,
+    html:(t,f) => `<button class="btn btn-loading" aria-busy="true">
+  <span class="spinner" aria-hidden="true"></span>
+  <span>Processing…</span>
+</button>`
+  }
+};
+
+/* =========================================================
+   PRESETS — NAVBARS
+   ========================================================= */
+const NAV_BASE = (t, d) => `/* Navbar base */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: ${d.navPad}px 24px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  font-family: var(--f-sans);
+  font-size: ${t.fontSize}px;
+  color: var(--c-text);
+}
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  font-size: ${t.fontSize + 2}px;
+  text-decoration: none;
+  color: inherit;
+}
+.navbar-logo .mark {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-primary), color-mix(in srgb, var(--c-primary) 50%, #a06eff));
+}
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.navbar-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: ${Math.max(4, t.radius - 2)}px;
+  font-weight: 500;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  transition: all var(--dur) var(--ease);
+}
+.navbar-link:hover { color: var(--c-text); background: var(--c-surface-2); }
+.navbar-link.active { color: var(--c-primary); }
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.navbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: ${d.btnPadY}px ${d.btnPadX}px;
+  font-size: ${t.fontSize - 1}px;
+  font-weight: 600;
+  border-radius: ${t.radius}px;
+  border: none;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  white-space: nowrap;
+}
+.navbar-btn-primary {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+}
+.navbar-btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.navbar-btn-ghost {
+  background: transparent;
+  color: var(--c-text);
+}
+.navbar-btn-ghost:hover { background: var(--c-surface-2); }
+.navbar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.navbar-icon-btn:hover { background: var(--c-surface-2); color: var(--c-text); }
+.navbar-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 12px;
+}
+.navbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: ${Math.max(6, t.radius - 2)}px;
+  background: var(--c-surface-2);
+  color: var(--c-text-muted);
+  font-size: ${t.fontSize - 1}px;
+  min-width: 180px;
+  border: 1px solid transparent;
+  transition: all var(--dur) var(--ease);
+}
+.navbar-search:hover { border-color: var(--c-border); }
+.navbar-search svg { width: 15px; height: 15px; }
+.navbar-hamburger {
+  display: none;
+  background: none; border: none;
+  color: var(--c-text); cursor: pointer; padding: 8px;
+}
+
+/* Mobile */
+@media (max-width: 820px) {
+  .navbar-links, .navbar-search, .navbar-actions .navbar-btn-ghost { display: none; }
+  .navbar-hamburger { display: inline-flex; }
+}`;
+
+const NAVBARS = {
+  classic: {
+    label:"Classic", desc:"Logo left, links center",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* Classic variant */
+${f.blur ? `.navbar {
+  position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--c-surface) 75%, transparent);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+}` : `.navbar { position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40; }`}`,
+    html:(t,f) => `<nav class="navbar">
+  <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+  ${f.showSearch ? `<div class="navbar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Search…</span>
+  </div>` : `<div class="navbar-links">
+    <a class="navbar-link active" href="#">Home</a>
+    <a class="navbar-link" href="#">Features</a>
+    <a class="navbar-link" href="#">Pricing</a>
+    <a class="navbar-link" href="#">Docs</a>
+  </div>`}
+  <div class="navbar-actions">
+    ${f.showAvatar ? `<button class="navbar-icon-btn" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </button>
+    <span class="navbar-avatar">AR</span>` : ""}
+    ${f.showCTA ? `<button class="navbar-btn navbar-btn-primary">Get started</button>` : ""}
+    <button class="navbar-hamburger" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" width="22" height="22"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+    </button>
+  </div>
+</nav>`
+  },
+  centered: {
+    label:"Centered", desc:"Logo in center",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* Centered variant */
+.navbar { position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40; }
+.navbar-centered { justify-content: center; position: relative; }
+.navbar-centered .navbar-logo {
+  position: absolute; left: 50%; transform: translateX(-50%);
+}
+.navbar-centered .navbar-links { gap: 4px; }
+.navbar-centered .navbar-links:first-child { margin-right: 24px; }
+.navbar-centered .navbar-links:last-child { margin-left: 24px; }
+@media (max-width: 820px) {
+  .navbar-centered .navbar-links { display: none; }
+}`,
+    html:(t,f) => `<nav class="navbar navbar-centered">
+  <div class="navbar-links">
+    <a class="navbar-link active" href="#">Home</a>
+    <a class="navbar-link" href="#">Features</a>
+    <a class="navbar-link" href="#">Pricing</a>
+  </div>
+  <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+  <div class="navbar-links">
+    <a class="navbar-link" href="#">Docs</a>
+    <a class="navbar-link" href="#">Blog</a>
+    ${f.showCTA ? `<button class="navbar-btn navbar-btn-primary" style="margin-left:8px">Sign up</button>` : ""}
+  </div>
+</nav>`
+  },
+  minimal: {
+    label:"Minimal", desc:"Logo + few links",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* Minimal variant */
+.navbar {
+  position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40;
+  background: transparent; border-bottom: none;
+  padding: ${d.navPad + 4}px 32px;
+}
+.navbar-minimal .navbar-links { gap: 26px; }
+.navbar-minimal .navbar-link { padding: 4px 0; }
+.navbar-minimal .navbar-link:hover { background: none; color: var(--c-primary); }`,
+    html:(t,f) => `<nav class="navbar navbar-minimal">
+  <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+  <div class="navbar-links">
+    <a class="navbar-link" href="#">Work</a>
+    <a class="navbar-link" href="#">About</a>
+    <a class="navbar-link" href="#">Contact</a>
+  </div>
+  ${f.showCTA ? `<button class="navbar-btn navbar-btn-primary">Let's talk</button>` : ""}
+</nav>`
+  },
+  glass: {
+    label:"Glass", desc:"Frosted blur",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* Glass variant */
+.navbar {
+  position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--c-surface) 60%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+}`,
+    html:(t,f) => `<nav class="navbar">
+  <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+  <div class="navbar-links">
+    <a class="navbar-link active" href="#">Home</a>
+    <a class="navbar-link" href="#">Features</a>
+    <a class="navbar-link" href="#">Pricing</a>
+  </div>
+  <div class="navbar-actions">
+    ${f.showCTA ? `<button class="navbar-btn navbar-btn-primary">Get started</button>` : ""}
+  </div>
+</nav>`
+  },
+  pill: {
+    label:"Floating pill", desc:"Detached rounded nav",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* Pill variant */
+.navbar-pill-wrap {
+  position: ${f.sticky ? "sticky" : "relative"}; top: 12px; z-index: 40;
+  padding: 0 24px;
+}
+.navbar-pill {
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: ${Math.max(6, d.navPad - 4)}px ${Math.max(14, d.navPad)}px;
+  background: var(--c-surface);
+  box-shadow: var(--sh-md);
+  border-bottom: 1px solid var(--c-border);
+}
+.navbar-pill .navbar-links { gap: 2px; }
+.navbar-pill .navbar-link { padding: 7px 14px; border-radius: 999px; }
+.navbar-pill .navbar-btn { border-radius: 999px; }`,
+    html:(t,f) => `<div class="navbar-pill-wrap">
+  <nav class="navbar navbar-pill">
+    <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+    <div class="navbar-links">
+      <a class="navbar-link active" href="#">Home</a>
+      <a class="navbar-link" href="#">Features</a>
+      <a class="navbar-link" href="#">Pricing</a>
+    </div>
+    <div class="navbar-actions">
+      ${f.showCTA ? `<button class="navbar-btn navbar-btn-primary">Sign up</button>` : ""}
+    </div>
+  </nav>
+</div>`
+  },
+  dark: {
+    label:"Dark", desc:"Dark themed navbar",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* Dark variant */
+.navbar-dark {
+  background: #0a0f1e;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  color: #f8fafc;
+  position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40;
+}
+.navbar-dark .navbar-link { color: rgba(248,250,252,.65); }
+.navbar-dark .navbar-link:hover { color: #f8fafc; background: rgba(255,255,255,.06); }
+.navbar-dark .navbar-link.active { color: var(--c-primary); }
+.navbar-dark .navbar-icon-btn { color: rgba(248,250,252,.65); }
+.navbar-dark .navbar-icon-btn:hover { background: rgba(255,255,255,.08); color: #f8fafc; }
+.navbar-dark .navbar-btn-ghost { color: rgba(248,250,252,.85); }
+.navbar-dark .navbar-btn-ghost:hover { background: rgba(255,255,255,.08); }`,
+    html:(t,f) => `<nav class="navbar navbar-dark">
+  <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+  <div class="navbar-links">
+    <a class="navbar-link active" href="#">Dashboard</a>
+    <a class="navbar-link" href="#">Projects</a>
+    <a class="navbar-link" href="#">Team</a>
+    <a class="navbar-link" href="#">Reports</a>
+  </div>
+  <div class="navbar-actions">
+    <button class="navbar-btn navbar-btn-ghost">Log in</button>
+    ${f.showCTA ? `<button class="navbar-btn navbar-btn-primary">Get started</button>` : ""}
+    ${f.showAvatar ? `<span class="navbar-avatar">AR</span>` : ""}
+  </div>
+</nav>`
+  },
+  cta: {
+    label:"With CTA", desc:"Prominent action",
+    css:(t,f,d) => `${NAV_BASE(t,d)}
+
+/* CTA variant */
+.navbar { position: ${f.sticky ? "sticky" : "relative"}; top: 0; z-index: 40; }
+.navbar-cta { justify-content: space-between; gap: 40px; }
+.navbar-cta .navbar-links { flex: 1; justify-content: center; }
+.navbar-cta .navbar-btn-primary {
+  padding: ${d.btnPadY + 2}px ${d.btnPadX + 6}px;
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--c-primary) 60%, transparent);
+}`,
+    html:(t,f) => `<nav class="navbar navbar-cta">
+  <a class="navbar-logo" href="#"><span class="mark"></span>Acme</a>
+  <div class="navbar-links">
+    <a class="navbar-link active" href="#">Product</a>
+    <a class="navbar-link" href="#">Solutions</a>
+    <a class="navbar-link" href="#">Customers</a>
+    <a class="navbar-link" href="#">Pricing</a>
+  </div>
+  <div class="navbar-actions">
+    <button class="navbar-btn navbar-btn-primary">Start free trial</button>
+  </div>
+</nav>`
+  }
+};
+
+/* =========================================================
+   PRESETS — SIDEBARS
+   ========================================================= */
+const SB_BASE = (t, d) => `/* Sidebar base */
+.sidebar {
+  width: 260px;
+  background: var(--c-surface);
+  border-right: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--f-sans);
+  font-size: ${t.fontSize}px;
+  color: var(--c-text);
+  height: 100%;
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  font-weight: 700;
+  font-size: ${t.fontSize + 2}px;
+  border-bottom: 1px solid var(--c-border);
+}
+.sidebar-brand .mark {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-primary), color-mix(in srgb, var(--c-primary) 50%, #a06eff));
+  flex: 0 0 auto;
+}
+.sidebar-nav {
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+}
+.sidebar-group-title {
+  padding: 12px 10px 6px;
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 700;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: ${d.itemPadY}px ${d.itemPadX}px;
+  border-radius: ${Math.max(6, t.radius - 2)}px;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all var(--dur) var(--ease);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: ${t.fontSize}px;
+}
+.sidebar-item svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.sidebar-item:hover { background: var(--c-surface-2); color: var(--c-text); }
+.sidebar-item.active {
+  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  color: var(--c-primary);
+  font-weight: 600;
+}
+.sidebar-item .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-badge {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+  min-width: 20px;
+  text-align: center;
+}
+.sidebar-badge.neutral { background: color-mix(in srgb, var(--c-text-muted) 20%, transparent); color: var(--c-text-muted); }`;
+
+const SIDEBARS = {
+  rail: {
+    label:"Icon rail", desc:"Compact icon-only",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Rail variant */
+.sidebar-rail {
+  width: 68px;
+  align-items: center;
+}
+.sidebar-rail .sidebar-brand { justify-content: center; padding: 14px 0; }
+.sidebar-rail .sidebar-nav { padding: 12px 8px; align-items: center; width: 100%; }
+.sidebar-rail .sidebar-item {
+  justify-content: center;
+  padding: ${d.itemPadY}px;
+  width: 44px;
+  height: 44px;
+}
+.sidebar-rail .sidebar-item .label,
+.sidebar-rail .sidebar-group-title,
+.sidebar-rail .sidebar-badge { display: none; }`,
+    html:(t,f) => `<aside class="sidebar sidebar-rail">
+  <div class="sidebar-brand"><div class="mark"></div></div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-item active" href="#" title="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+    </a>
+    <a class="sidebar-item" href="#" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+    </a>
+    <a class="sidebar-item" href="#" title="Messages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </a>
+    <a class="sidebar-item" href="#" title="Calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+    </a>
+    <a class="sidebar-item" href="#" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </a>
+  </nav>
+</aside>`
+  },
+  labeled: {
+    label:"Labeled", desc:"Full labels",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Labeled variant */
+.sidebar-item.active::before { content: ""; }`,
+    html:(t,f) => `<aside class="sidebar">
+  <div class="sidebar-brand"><div class="mark"></div>Acme</div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      <span class="label">Home</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="label">Dashboard</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="label">Messages</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+      <span class="label">Calendar</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="label">Settings</span>
+    </a>
+  </nav>
+</aside>`
+  },
+  sections: {
+    label:"With sections", desc:"Grouped nav",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Sections variant */
+.sidebar-nav { padding: 8px 10px 20px; }`,
+    html:(t,f) => `<aside class="sidebar">
+  <div class="sidebar-brand"><div class="mark"></div>Acme</div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-group-title">Main</div>
+    <a class="sidebar-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      <span class="label">Home</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="label">Dashboard</span>
+    </a>
+    <div class="sidebar-group-title">Workspace</div>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <span class="label">Projects</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="label">Team</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="label">Documents</span>
+    </a>
+    <div class="sidebar-group-title">Account</div>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="label">Settings</span>
+    </a>
+  </nav>
+</aside>`
+  },
+  profile: {
+    label:"With profile", desc:"User card at top",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Profile variant */
+.sidebar-user {
+  padding: 16px;
+  border-bottom: 1px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-user-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6ea8fe, #a06eff);
+  color: #fff; font-weight: 700; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-name { font-weight: 600; font-size: ${t.fontSize}px; color: var(--c-text); }
+.sidebar-user-email { font-size: ${t.fontSize - 1}px; color: var(--c-text-muted); margin-top: 1px; }
+.sidebar-user-menu {
+  background: none; border: none; color: var(--c-text-muted);
+  cursor: pointer; padding: 4px; border-radius: 6px;
+}
+.sidebar-user-menu:hover { background: var(--c-surface-2); color: var(--c-text); }`,
+    html:(t,f) => `<aside class="sidebar">
+  <div class="sidebar-brand"><div class="mark"></div>Acme</div>
+  ${f.showUser ? `<div class="sidebar-user">
+    <div class="sidebar-user-avatar">AR</div>
+    <div class="sidebar-user-info">
+      <div class="sidebar-user-name">Alex Rivera</div>
+      <div class="sidebar-user-email">alex@acme.io</div>
+    </div>
+    <button class="sidebar-user-menu" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" width="16" height="16"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </button>
+  </div>` : ""}
+  <nav class="sidebar-nav">
+    <a class="sidebar-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      <span class="label">Home</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="label">Dashboard</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="label">Messages</span>
+      ${f.showBadges ? `<span class="sidebar-badge">3</span>` : ""}
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="label">Settings</span>
+    </a>
+  </nav>
+</aside>`
+  },
+  badges: {
+    label:"With badges", desc:"Count badges",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Badges variant */
+.sidebar-item.active .sidebar-badge { background: var(--c-primary); color: var(--c-primary-fg); }`,
+    html:(t,f) => `<aside class="sidebar">
+  <div class="sidebar-brand"><div class="mark"></div>Acme</div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-group-title">Inbox</div>
+    <a class="sidebar-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+      <span class="label">Inbox</span>
+      ${f.showBadges ? `<span class="sidebar-badge">12</span>` : ""}
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <span class="label">Sent</span>
+      ${f.showBadges ? `<span class="sidebar-badge neutral">4</span>` : ""}
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span class="label">Spam</span>
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span class="label">Trash</span>
+      ${f.showBadges ? `<span class="sidebar-badge neutral">28</span>` : ""}
+    </a>
+  </nav>
+</aside>`
+  },
+  widgets: {
+    label:"Widgets", desc:"Stacked info cards",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Widgets variant */
+.sidebar { width: 300px; padding: 16px; gap: 12px; }
+.sidebar-brand { padding: 0 0 16px; border: none; }
+.widget {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: ${t.radius}px;
+  padding: 16px;
+}
+.widget-title {
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.widget-stat {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--c-text);
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+.widget-sub {
+  font-size: ${t.fontSize - 1}px;
+  color: var(--c-text-muted);
+  margin-top: 4px;
+}
+.widget-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--c-primary) 15%, transparent);
+  margin-top: 10px;
+  overflow: hidden;
+}
+.widget-bar div {
+  height: 100%;
+  background: var(--c-primary);
+  border-radius: inherit;
+}`,
+    html:(t,f) => `<aside class="sidebar">
+  <div class="sidebar-brand"><div class="mark"></div>Acme</div>
+  <div class="widget">
+    <div class="widget-title">This month</div>
+    <div class="widget-stat">$48,290</div>
+    <div class="widget-sub">↑ 12.4% vs last month</div>
+    <div class="widget-bar"><div style="width:72%"></div></div>
+  </div>
+  <div class="widget">
+    <div class="widget-title">Storage</div>
+    <div class="widget-stat">62%</div>
+    <div class="widget-sub">124 GB of 200 GB used</div>
+    <div class="widget-bar"><div style="width:62%"></div></div>
+  </div>
+  <div class="widget">
+    <div class="widget-title">Team</div>
+    <div style="display:flex; align-items:center; margin-top:8px;">
+      <div style="display:flex;">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6ea8fe,#a06eff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid var(--c-surface-2);">AR</div>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid var(--c-surface-2);margin-left:-10px;">MC</div>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid var(--c-surface-2);margin-left:-10px;">JC</div>
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--c-surface);color:var(--c-text-muted);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:2px solid var(--c-surface-2);margin-left:-10px;">+8</div>
+      </div>
+    </div>
+  </div>
+</aside>`
+  },
+  multilevel: {
+    label:"Multi-level", desc:"Nested navigation",
+    css:(t,f,d) => `${SB_BASE(t,d)}
+
+/* Multi-level variant */
+.sidebar-parent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: ${d.itemPadY}px ${d.itemPadX}px;
+  border-radius: ${Math.max(6, t.radius - 2)}px;
+  color: var(--c-text);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: ${t.fontSize}px;
+}
+.sidebar-parent:hover { background: var(--c-surface-2); }
+.sidebar-parent .chev { margin-left: auto; transition: transform var(--dur) var(--ease); width: 14px; height: 14px; }
+.sidebar-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 26px;
+  margin: 2px 0 6px;
+  border-left: 2px solid var(--c-border);
+  margin-left: 18px;
+}
+.sidebar-subnav .sidebar-item {
+  padding: 7px ${d.itemPadX}px;
+  font-size: ${t.fontSize - 1}px;
+  font-weight: 500;
+}`,
+    html:(t,f) => `<aside class="sidebar">
+  <div class="sidebar-brand"><div class="mark"></div>Acme</div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      <span class="label">Home</span>
+    </a>
+    <div class="sidebar-parent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <span>Projects</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+    <div class="sidebar-subnav">
+      <a class="sidebar-item" href="#"><span class="label">All projects</span></a>
+      <a class="sidebar-item" href="#"><span class="label">Active</span></a>
+      <a class="sidebar-item" href="#"><span class="label">Archived</span></a>
+    </div>
+    <div class="sidebar-parent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Team</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+    <a class="sidebar-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="label">Settings</span>
+    </a>
+  </nav>
+</aside>`
+  }
+};
+
+/* =========================================================
+   PRESETS — FOOTERS
+   ========================================================= */
+const FT_BASE = (t, d) => `/* Footer base */
+.footer {
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+  font-family: var(--f-sans);
+  font-size: ${t.fontSize}px;
+  color: var(--c-text);
+}
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: ${d.footPadY}px 32px;
+}
+.footer-title {
+  font-size: ${t.fontSize}px;
+  font-weight: 700;
+  color: var(--c-text);
+  margin: 0 0 14px;
+  letter-spacing: -.005em;
+}
+.footer-link {
+  display: block;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  padding: 5px 0;
+  font-size: ${t.fontSize}px;
+  transition: color var(--dur) var(--ease);
+}
+.footer-link:hover { color: var(--c-primary); }
+.footer-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: ${t.fontSize + 2}px;
+  color: var(--c-text); text-decoration: none;
+}
+.footer-logo .mark {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-primary), color-mix(in srgb, var(--c-primary) 50%, #a06eff));
+}
+.footer-bottom {
+  border-top: 1px solid var(--c-border);
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: ${t.fontSize - 1}px;
+  color: var(--c-text-muted);
+  flex-wrap: wrap;
+}
+.footer-social {
+  display: flex;
+  gap: 8px;
+}
+.footer-social a {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c-surface-2);
+  color: var(--c-text-muted);
+  transition: all var(--dur) var(--ease);
+}
+.footer-social a:hover { background: var(--c-primary); color: var(--c-primary-fg); transform: translateY(-2px); }
+.footer-social svg { width: 16px; height: 16px; }`;
+
+const FOOTERS = {
+  simple: {
+    label:"Simple", desc:"One line + ©",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* Simple variant */
+.footer-simple .footer-inner {
+  padding: ${Math.max(20, Math.floor(d.footPadY/2))}px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}`,
+    html:(t,f) => `<footer class="footer footer-simple">
+  <div class="footer-inner">
+    <a class="footer-logo" href="#"><span class="mark"></span>Acme</a>
+    <div style="display:flex; gap:24px; font-size:13px;">
+      <a class="footer-link" href="#" style="padding:0">Privacy</a>
+      <a class="footer-link" href="#" style="padding:0">Terms</a>
+      <a class="footer-link" href="#" style="padding:0">Contact</a>
+    </div>
+    <div style="color:var(--c-text-muted); font-size:13px;">© 2026 Acme, Inc.</div>
+  </div>
+</footer>`
+  },
+  columns: {
+    label:"Multi-column", desc:"Logo + link columns",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* Columns variant */
+.footer-columns {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(${f.columns}, 1fr);
+  gap: 40px;
+}
+.footer-brand-desc {
+  color: var(--c-text-muted);
+  margin: 14px 0 0;
+  line-height: 1.6;
+  max-width: 300px;
+}
+@media (max-width: 780px) {
+  .footer-columns { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .footer-columns > div:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .footer-columns { grid-template-columns: 1fr; }
+}`,
+    html:(t,f) => `<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-columns">
+      <div>
+        <a class="footer-logo" href="#"><span class="mark"></span>Acme</a>
+        <p class="footer-brand-desc">Building tools that help teams ship better software, faster.</p>
+      </div>
+      <div>
+        <h4 class="footer-title">Product</h4>
+        <a class="footer-link" href="#">Features</a>
+        <a class="footer-link" href="#">Pricing</a>
+        <a class="footer-link" href="#">Integrations</a>
+        <a class="footer-link" href="#">Changelog</a>
+      </div>
+      <div>
+        <h4 class="footer-title">Company</h4>
+        <a class="footer-link" href="#">About</a>
+        <a class="footer-link" href="#">Blog</a>
+        <a class="footer-link" href="#">Careers</a>
+        <a class="footer-link" href="#">Contact</a>
+      </div>
+      <div>
+        <h4 class="footer-title">Resources</h4>
+        <a class="footer-link" href="#">Docs</a>
+        <a class="footer-link" href="#">Community</a>
+        <a class="footer-link" href="#">Help center</a>
+        <a class="footer-link" href="#">Status</a>
+      </div>
+    </div>
+  </div>
+  ${f.showBottom ? `<div class="footer-bottom">
+    <div>© 2026 Acme, Inc. All rights reserved.</div>
+    ${f.showSocial ? `<div class="footer-social">
+      <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+      <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a>
+      <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg></a>
+    </div>` : ""}
+  </div>` : ""}
+</footer>`
+  },
+  newsletter: {
+    label:"Newsletter", desc:"Signup form + links",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* Newsletter variant */
+.footer-newsletter {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.footer-newsletter h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  letter-spacing: -.02em;
+}
+.footer-newsletter p {
+  color: var(--c-text-muted);
+  margin: 0 0 20px;
+  line-height: 1.6;
+  max-width: 420px;
+}
+.newsletter-form {
+  display: flex;
+  gap: 8px;
+}
+.newsletter-form input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: ${t.radius}px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: ${t.fontSize}px;
+  outline: none;
+  transition: all var(--dur) var(--ease);
+  font-family: inherit;
+}
+.newsletter-form input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 20%, transparent);
+}
+.newsletter-form button {
+  padding: 12px 22px;
+  border-radius: ${t.radius}px;
+  border: none;
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  font-weight: 600;
+  font-size: ${t.fontSize}px;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.newsletter-form button:hover { filter: brightness(1.08); }
+@media (max-width: 720px) {
+  .footer-newsletter { grid-template-columns: 1fr; gap: 32px; }
+  .newsletter-form { flex-direction: column; }
+}`,
+    html:(t,f) => `<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-newsletter">
+      <div>
+        <h3>Stay in the loop</h3>
+        <p>Get product updates, design tips, and interesting reads — once a month, no spam.</p>
+        <form class="newsletter-form" onsubmit="event.preventDefault()">
+          <input type="email" placeholder="you@example.com" aria-label="Email">
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
+      <div>
+        <h4 class="footer-title">Product</h4>
+        <a class="footer-link" href="#">Features</a>
+        <a class="footer-link" href="#">Pricing</a>
+        <a class="footer-link" href="#">Changelog</a>
+        <h4 class="footer-title" style="margin-top:24px;">Company</h4>
+        <a class="footer-link" href="#">About</a>
+        <a class="footer-link" href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+  ${f.showBottom ? `<div class="footer-bottom">
+    <div>© 2026 Acme, Inc.</div>
+    <div style="display:flex; gap:20px;">
+      <a class="footer-link" href="#" style="padding:0">Privacy</a>
+      <a class="footer-link" href="#" style="padding:0">Terms</a>
+    </div>
+  </div>` : ""}
+</footer>`
+  },
+  social: {
+    label:"Social focus", desc:"Big social row",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* Social variant */
+.footer-social-hero {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.footer-social-hero h3 {
+  font-size: 22px; font-weight: 700; margin: 0 0 12px; letter-spacing: -.02em;
+}
+.footer-social-hero p {
+  color: var(--c-text-muted); margin: 0 0 24px; line-height: 1.6;
+}
+.footer-social-large {
+  display: flex; justify-content: center; gap: 12px; margin-bottom: 32px;
+}
+.footer-social-large a {
+  width: 48px; height: 48px;
+  border-radius: ${Math.max(8, t.radius)}px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c-surface-2);
+  color: var(--c-text-muted);
+  transition: all var(--dur) var(--ease);
+}
+.footer-social-large a:hover {
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px -6px color-mix(in srgb, var(--c-primary) 50%, transparent);
+}
+.footer-social-large svg { width: 20px; height: 20px; }
+.footer-social-links {
+  display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+}`,
+    html:(t,f) => `<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-social-hero">
+      <h3>Follow along</h3>
+      <p>Get the latest updates, behind-the-scenes content, and early access to new features.</p>
+      <div class="footer-social-large">
+        <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+        <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a>
+        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg></a>
+        <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg></a>
+      </div>
+      <div class="footer-social-links">
+        <a class="footer-link" href="#" style="padding:0">Privacy</a>
+        <a class="footer-link" href="#" style="padding:0">Terms</a>
+        <a class="footer-link" href="#" style="padding:0">Cookies</a>
+        <a class="footer-link" href="#" style="padding:0">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>`
+  },
+  cta: {
+    label:"With CTA", desc:"Bold call-to-action",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* CTA variant */
+.footer-cta-section {
+  background: linear-gradient(135deg,
+    var(--c-primary),
+    color-mix(in srgb, var(--c-primary) 50%, #a06eff));
+  color: #ffffff;
+  padding: 60px 32px;
+  text-align: center;
+}
+.footer-cta-section h2 {
+  font-size: 32px; font-weight: 700; margin: 0 0 12px; letter-spacing: -.02em;
+}
+.footer-cta-section p {
+  opacity: .9; margin: 0 0 28px; font-size: ${t.fontSize + 2}px;
+  max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.6;
+}
+.footer-cta-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.footer-cta-btn {
+  padding: 14px 28px;
+  border-radius: ${t.radius}px;
+  border: none;
+  font-weight: 600;
+  font-size: ${t.fontSize + 1}px;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  font-family: inherit;
+}
+.footer-cta-btn.primary { background: #ffffff; color: var(--c-primary); }
+.footer-cta-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0,0,0,.3); }
+.footer-cta-btn.ghost {
+  background: rgba(255,255,255,.15);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,.3);
+}
+.footer-cta-btn.ghost:hover { background: rgba(255,255,255,.22); }`,
+    html:(t,f) => `<footer class="footer">
+  <div class="footer-cta-section">
+    <h2>Ready to get started?</h2>
+    <p>Join 50,000+ teams building better products with Acme. No credit card required.</p>
+    <div class="footer-cta-actions">
+      <button class="footer-cta-btn primary">Start free trial</button>
+      <button class="footer-cta-btn ghost">Talk to sales</button>
+    </div>
+  </div>
+  <div class="footer-inner" style="padding-top:40px; padding-bottom:40px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+      <a class="footer-logo" href="#"><span class="mark"></span>Acme</a>
+      <div style="display:flex; gap:24px;">
+        <a class="footer-link" href="#" style="padding:0">Features</a>
+        <a class="footer-link" href="#" style="padding:0">Pricing</a>
+        <a class="footer-link" href="#" style="padding:0">Docs</a>
+        <a class="footer-link" href="#" style="padding:0">Contact</a>
+      </div>
+      <div style="color:var(--c-text-muted); font-size:13px;">© 2026 Acme, Inc.</div>
+    </div>
+  </div>
+</footer>`
+  },
+  dark: {
+    label:"Dark minimal", desc:"Dark themed footer",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* Dark variant */
+.footer-dark {
+  background: #0a0f1e;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: #f8fafc;
+}
+.footer-dark .footer-title { color: #f8fafc; }
+.footer-dark .footer-link { color: rgba(248,250,252,.65); }
+.footer-dark .footer-link:hover { color: var(--c-primary); }
+.footer-dark .footer-logo { color: #f8fafc; }
+.footer-dark .footer-bottom {
+  border-top-color: rgba(255,255,255,.08);
+  color: rgba(248,250,252,.5);
+}
+.footer-dark .footer-social a {
+  background: rgba(255,255,255,.06);
+  color: rgba(248,250,252,.7);
+}
+.footer-dark .footer-social a:hover { background: var(--c-primary); color: #fff; }`,
+    html:(t,f) => `<footer class="footer footer-dark">
+  <div class="footer-inner">
+    <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:40px;">
+      <div>
+        <a class="footer-logo" href="#"><span class="mark"></span>Acme</a>
+        <p style="color:rgba(248,250,252,.6); margin:14px 0 0; line-height:1.6; max-width:280px;">
+          Modern tools for modern teams.
+        </p>
+      </div>
+      <div>
+        <h4 class="footer-title">Product</h4>
+        <a class="footer-link" href="#">Features</a>
+        <a class="footer-link" href="#">Pricing</a>
+        <a class="footer-link" href="#">API</a>
+      </div>
+      <div>
+        <h4 class="footer-title">Company</h4>
+        <a class="footer-link" href="#">About</a>
+        <a class="footer-link" href="#">Blog</a>
+        <a class="footer-link" href="#">Careers</a>
+      </div>
+      <div>
+        <h4 class="footer-title">Legal</h4>
+        <a class="footer-link" href="#">Privacy</a>
+        <a class="footer-link" href="#">Terms</a>
+        <a class="footer-link" href="#">Security</a>
+      </div>
+    </div>
+  </div>
+  ${f.showBottom ? `<div class="footer-bottom">
+    <div>© 2026 Acme, Inc. All rights reserved.</div>
+    ${f.showSocial ? `<div class="footer-social">
+      <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+      <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a>
+    </div>` : ""}
+  </div>` : ""}
+</footer>`
+  },
+  bento: {
+    label:"Bento grid", desc:"Card grid layout",
+    css:(t,f,d) => `${FT_BASE(t,d)}
+
+/* Bento variant */
+.footer-bento {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+}
+.footer-bento .bento-card {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: ${t.radius}px;
+  padding: 20px;
+}
+.footer-bento .bento-wide { grid-column: span 2; }
+.footer-bento .bento-tall { grid-row: span 2; }
+.footer-bento .footer-title { margin-top: 0; }
+.footer-bento .brand-block {
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 160px;
+}
+.footer-bento .brand-tagline {
+  color: var(--c-text-muted);
+  line-height: 1.6;
+  margin: 16px 0 0;
+}
+@media (max-width: 720px) {
+  .footer-bento { grid-template-columns: 1fr; }
+  .footer-bento .bento-wide,
+  .footer-bento .bento-tall { grid-column: auto; grid-row: auto; }
+}`,
+    html:(t,f) => `<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-bento">
+      <div class="bento-card bento-wide brand-block">
+        <div>
+          <a class="footer-logo" href="#"><span class="mark"></span>Acme</a>
+          <p class="brand-tagline">Modern tools for modern teams. Ship better software, faster.</p>
+        </div>
+        ${f.showSocial ? `<div class="footer-social" style="margin-top:20px;">
+          <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+          <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a>
+        </div>` : ""}
+      </div>
+      <div class="bento-card">
+        <h4 class="footer-title">Product</h4>
+        <a class="footer-link" href="#">Features</a>
+        <a class="footer-link" href="#">Pricing</a>
+        <a class="footer-link" href="#">API</a>
+      </div>
+      <div class="bento-card bento-tall">
+        <h4 class="footer-title">Company</h4>
+        <a class="footer-link" href="#">About</a>
+        <a class="footer-link" href="#">Blog</a>
+        <a class="footer-link" href="#">Careers</a>
+        <a class="footer-link" href="#">Contact</a>
+        <a class="footer-link" href="#">Press</a>
+      </div>
+      <div class="bento-card" style="grid-column: span 2;">
+        <h4 class="footer-title">Get updates</h4>
+        <form style="display:flex; gap:8px; margin-top:4px;" onsubmit="event.preventDefault()">
+          <input type="email" placeholder="you@example.com" style="flex:1; padding:10px 14px; border-radius:${t.radius}px; border:1px solid var(--c-border); background:var(--c-surface); font-family:inherit; font-size:${t.fontSize}px; outline:none; color:var(--c-text);">
+          <button type="submit" style="padding:10px 20px; border-radius:${t.radius}px; border:none; background:var(--c-primary); color:var(--c-primary-fg); font-weight:600; cursor:pointer; font-family:inherit; font-size:${t.fontSize}px;">Subscribe</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  ${f.showBottom ? `<div class="footer-bottom">
+    <div>© 2026 Acme, Inc.</div>
+    <div style="display:flex; gap:20px;">
+      <a class="footer-link" href="#" style="padding:0">Privacy</a>
+      <a class="footer-link" href="#" style="padding:0">Terms</a>
+    </div>
+  </div>` : ""}
+</footer>`
+  }
+};
+
+/* =========================================================
+   REGISTRY
+   ========================================================= */
+const REGISTRY = { buttons: BUTTONS, navbars: NAVBARS, sidebars: SIDEBARS, footers: FOOTERS };
+
+/* =========================================================
+   DOM
+   ========================================================= */
+const sidebar = document.getElementById("sideContent");
+const codeEl = document.getElementById("code");
+const copyBtn = document.getElementById("copyBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const tabsEl = document.getElementById("tabs");
+const previewFrame = document.getElementById("previewFrame");
+const themeToggleEl = document.getElementById("themeToggle");
+const viewportToggleEl = document.getElementById("viewportToggle");
+const styleNameEl = document.getElementById("styleName");
+const toast = document.getElementById("toast");
+const toastMsg = document.getElementById("toastMsg");
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+function renderSidebar() {
+  sidebar.innerHTML = "";
+  const styles = REGISTRY[state.category];
+  const features = state.features[state.category];
+  const density = DENSITY[state.tokens.density];
+
+  // Style presets
+  const styleSec = mkSection("Preset styles", "grid");
+  const grid = document.createElement("div");
+  grid.className = "style-grid";
+  Object.entries(styles).forEach(([id, s]) => {
+    const b = document.createElement("button");
+    b.className = "style-btn" + (state.styleId === id ? " active" : "");
+    b.innerHTML = `<div class="label">${s.label}</div><div class="desc">${s.desc}</div>`;
+    b.addEventListener("click", () => { state.styleId = id; renderSidebar(); refresh(); });
+    grid.appendChild(b);
+  });
+  styleSec.appendChild(grid);
+  sidebar.appendChild(styleSec);
+
+  // Theme presets
+  const themeSec = mkSection("Theme presets", "palette");
+  const themeRow = document.createElement("div");
+  themeRow.className = "theme-row";
+  Object.entries(THEMES).forEach(([id, th]) => {
+    const b = document.createElement("button");
+    b.className = "theme-btn" + (state.activeTheme === id ? " active" : "");
+    b.innerHTML = `<div class="theme-swatch">${th.swatch.map(c => `<div style="background:${c}"></div>`).join("")}</div><span>${th.label}</span>`;
+    b.addEventListener("click", () => {
+      state.activeTheme = id;
+      Object.assign(state.tokens, th.tokens);
+      renderSidebar(); refresh();
+    });
+    themeRow.appendChild(b);
+  });
+  themeSec.appendChild(themeRow);
+  sidebar.appendChild(themeSec);
+
+  // Density
+  const denSec = mkSection("Density", "layout");
+  const denSeg = document.createElement("div");
+  denSeg.className = "segmented";
+  Object.entries(DENSITY).forEach(([id, d]) => {
+    const b = document.createElement("button");
+    b.className = state.tokens.density === id ? "active" : "";
+    b.textContent = d.label;
+    b.addEventListener("click", () => { state.tokens.density = id; renderSidebar(); refresh(); });
+    denSeg.appendChild(b);
+  });
+  denSec.appendChild(denSeg);
+  sidebar.appendChild(denSec);
+
+  // Colors
+  const colSec = mkSection("Colors", "palette");
+  [
+    ["primary","Primary"],
+    ["primaryFg","Primary text"],
+    ["surface","Surface"],
+    ["surface2","Surface 2"],
+    ["text","Text"],
+    ["textMuted","Text muted"],
+    ["border","Border"]
+  ].forEach(([k,l]) => colSec.appendChild(buildColorRow(k, l)));
+  sidebar.appendChild(colSec);
+
+  // Typography
+  const typoSec = mkSection("Typography", "type");
+  typoSec.appendChild(selectRow("Font",
+    [["system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif","System"],
+     ["'Inter', system-ui, sans-serif","Inter"],
+     ["'DM Sans', system-ui, sans-serif","DM Sans"],
+     ["'Poppins', system-ui, sans-serif","Poppins"],
+     ["Georgia, 'Times New Roman', serif","Serif"]],
+    state.tokens.fontFamily, v => { state.tokens.fontFamily = v; refresh(); }));
+  typoSec.appendChild(rangeRow("Font size", "px", state.tokens.fontSize, 11, 18, 1,
+    v => { state.tokens.fontSize = v; refresh(); }, "fs"));
+  typoSec.appendChild(rangeRow("Font weight", "", state.tokens.fontWeight, 400, 700, 100,
+    v => { state.tokens.fontWeight = v; refresh(); }, "fw"));
+  sidebar.appendChild(typoSec);
+
+  // Shape & Effects
+  const shapeSec = mkSection("Shape & Effects", "layout");
+  shapeSec.appendChild(rangeRow("Radius", "px", state.tokens.radius, 0, 28, 1,
+    v => { state.tokens.radius = v; refresh(); }, "rad"));
+  shapeSec.appendChild(rangeRow("Border width", "px", state.tokens.borderWidth, 0, 4, 1,
+    v => { state.tokens.borderWidth = v; refresh(); }, "bw"));
+  shapeSec.appendChild(selectRow("Shadow",
+    [["none","None"],["sm","Small"],["md","Medium"],["lg","Large"],["xl","Extra large"]],
+    state.tokens.shadow, v => { state.tokens.shadow = v; refresh(); }));
+  shapeSec.appendChild(rangeRow("Blur", "px", state.tokens.blur, 0, 30, 1,
+    v => { state.tokens.blur = v; refresh(); }, "bl"));
+  shapeSec.appendChild(rangeRow("Transition", "ms", state.tokens.duration, 80, 600, 10,
+    v => { state.tokens.duration = v; refresh(); }, "dur"));
+  shapeSec.appendChild(selectRow("Easing",
+    [["cubic-bezier(0.4, 0, 0.2, 1)","Material"],
+     ["cubic-bezier(0.16, 1, 0.3, 1)","Smooth"],
+     ["cubic-bezier(0.34, 1.56, 0.64, 1)","Spring"],
+     ["ease","Ease"],["ease-out","Ease out"],["linear","Linear"]],
+    state.tokens.ease, v => { state.tokens.ease = v; refresh(); }));
+  sidebar.appendChild(shapeSec);
+
+  // Category features
+  const label = state.category === "buttons" ? "Button options" :
+                state.category === "navbars" ? "Navbar options" :
+                state.category === "sidebars" ? "Sidebar options" : "Footer options";
+  const featSec = mkSection(label, "zap");
+
+  if (state.category === "buttons") {
+    featSec.appendChild(switchRow("showSizes","Show sizes","Small / Default / Large",
+      features.showSizes, v => { features.showSizes = v; refresh(); }));
+    featSec.appendChild(switchRow("showVariants","Show variants","Secondary, danger, ghost",
+      features.showVariants, v => { features.showVariants = v; refresh(); }));
+    featSec.appendChild(switchRow("showStates","Show states","Hover, disabled, focus",
+      features.showStates, v => { features.showStates = v; refresh(); }));
+    featSec.appendChild(switchRow("rounded","Full pill radius","999px border-radius",
+      features.rounded, v => { features.rounded = v; refresh(); }));
+  } else if (state.category === "navbars") {
+    featSec.appendChild(switchRow("sticky","Sticky top","Position sticky at top",
+      features.sticky, v => { features.sticky = v; refresh(); }));
+    featSec.appendChild(switchRow("blur","Frosted blur","Backdrop-blur background",
+      features.blur, v => { features.blur = v; refresh(); }));
+    featSec.appendChild(switchRow("showSearch","Search bar","Inline search input",
+      features.showSearch, v => { features.showSearch = v; refresh(); }));
+    featSec.appendChild(switchRow("showCTA","CTA button","Prominent action button",
+      features.showCTA, v => { features.showCTA = v; refresh(); }));
+    featSec.appendChild(switchRow("showAvatar","Avatar","User avatar chip",
+      features.showAvatar, v => { features.showAvatar = v; refresh(); }));
+  } else if (state.category === "sidebars") {
+    featSec.appendChild(switchRow("showUser","User profile","Avatar + name block",
+      features.showUser, v => { features.showUser = v; refresh(); }));
+    featSec.appendChild(switchRow("showBadges","Count badges","Numeric badges on items",
+      features.showBadges, v => { features.showBadges = v; refresh(); }));
+    featSec.appendChild(switchRow("showSearch","Search","Search field in sidebar",
+      features.showSearch, v => { features.showSearch = v; refresh(); }));
+    featSec.appendChild(switchRow("showFooter","Footer block","Bottom section",
+      features.showFooter, v => { features.showFooter = v; refresh(); }));
+  } else {
+    featSec.appendChild(switchRow("showLogo","Brand logo","Include logo",
+      features.showLogo, v => { features.showLogo = v; refresh(); }));
+    featSec.appendChild(switchRow("showNewsletter","Newsletter","Signup form",
+      features.showNewsletter, v => { features.showNewsletter = v; refresh(); }));
+    featSec.appendChild(switchRow("showSocial","Social icons","Icon row",
+      features.showSocial, v => { features.showSocial = v; refresh(); }));
+    featSec.appendChild(switchRow("showBottom","Bottom bar","© notice + links",
+      features.showBottom, v => { features.showBottom = v; refresh(); }));
+    if (state.styleId === "columns") {
+      featSec.appendChild(rangeRow("Columns", "", features.columns, 2, 5, 1,
+        v => { features.columns = v; refresh(); }, "cols"));
+    }
+  }
+  sidebar.appendChild(featSec);
+
+  // Reset
+  const resetSec = mkSection("Reset", "reset");
+  const row = document.createElement("div");
+  row.className = "btn-row";
+  const r1 = document.createElement("button");
+  r1.className = "btn-mini";
+  r1.textContent = "Reset tokens";
+  r1.addEventListener("click", () => {
+    state.tokens = { ...DEFAULT_TOKENS };
+    state.activeTheme = "default";
+    renderSidebar(); refresh();
+  });
+  const r2 = document.createElement("button");
+  r2.className = "btn-mini danger";
+  r2.textContent = "Reset all";
+  r2.addEventListener("click", () => {
+    state.tokens = { ...DEFAULT_TOKENS };
+    state.features = JSON.parse(JSON.stringify(DEFAULT_FEATURES));
+    state.activeTheme = "default";
+    renderSidebar(); refresh();
+  });
+  row.appendChild(r1); row.appendChild(r2);
+  resetSec.appendChild(row);
+  sidebar.appendChild(resetSec);
+}
+
+/* ----- sidebar helpers ----- */
+function mkSection(title, icon) {
+  const s = document.createElement("div");
+  s.className = "section";
+  const icons = {
+    grid:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>',
+    palette:'<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+    layout:'<rect width="18" height="18" x="3" y="3" rx="3"/>',
+    type:'<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>',
+    zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    reset:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>'
+  };
+  s.innerHTML = `<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${icons[icon]||""}</svg>${title}</h3>`;
+  return s;
+}
+
+function buildColorRow(key, label) {
+  const row = document.createElement("div");
+  row.className = "color-row";
+  const input = document.createElement("input");
+  input.type = "color";
+  input.value = state.tokens[key];
+  input.addEventListener("input", e => {
+    state.tokens[key] = e.target.value;
+    state.activeTheme = "custom";
+    row.querySelector(".hex").textContent = e.target.value.toUpperCase();
+    refresh();
+  });
+  const info = document.createElement("div");
+  info.className = "info";
+  info.innerHTML = `<div class="name">${label}</div><div class="hex">${state.tokens[key].toUpperCase()}</div>`;
+  row.appendChild(input); row.appendChild(info);
+  return row;
+}
+
+function rangeRow(label, unit, value, min, max, step, onChange, id) {
+  const row = document.createElement("div");
+  row.innerHTML = `<div class="range-row"><span>${label}</span><span class="val">${value}${unit}</span></div>`;
+  const s = document.createElement("input");
+  s.type = "range"; s.min = min; s.max = max; s.step = step; s.value = value;
+  s.addEventListener("input", e => {
+    const v = parseFloat(e.target.value);
+    row.querySelector(".val").textContent = v + unit;
+    onChange(v);
+  });
+  row.appendChild(s);
+  return row;
+}
+
+function selectRow(label, options, value, onChange) {
+  const row = document.createElement("div");
+  const lbl = document.createElement("div");
+  lbl.className = "range-row";
+  lbl.style.marginBottom = "5px";
+  lbl.innerHTML = `<span>${label}</span>`;
+  row.appendChild(lbl);
+  const sel = document.createElement("select");
+  sel.className = "field-select";
+  options.forEach(([val, txt]) => {
+    const o = document.createElement("option");
+    o.value = val; o.textContent = txt;
+    if (val === value) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", e => onChange(e.target.value));
+  row.appendChild(sel);
+  return row;
+}
+
+function switchRow(key, label, desc, checked, onChange) {
+  const row = document.createElement("div");
+  row.className = "switch";
+  row.innerHTML = `
+    <label for="sw-${key}">
+      <div class="lbl">${label}</div>
+      <div class="desc">${desc}</div>
+    </label>
+    <input type="checkbox" id="sw-${key}" ${checked ? "checked" : ""}>
+    <span class="track"></span>`;
+  const input = row.querySelector("input");
+  input.addEventListener("change", () => onChange(input.checked));
+  row.querySelector(".track").addEventListener("click", () => input.click());
+  return row;
+}
+
+/* =========================================================
+   CSS VARIABLES
+   ========================================================= */
+function buildVarCSS() {
+  const t = state.tokens;
+  return `/* ═══════════════════════════════════════════════════
+   Design tokens
+   ═══════════════════════════════════════════════════ */
+:root {
+  --c-primary:      ${t.primary};
+  --c-primary-fg:   ${t.primaryFg};
+  --c-surface:      ${t.surface};
+  --c-surface-2:    ${t.surface2};
+  --c-text:         ${t.text};
+  --c-text-muted:   ${t.textMuted};
+  --c-border:       ${t.border};
+  --r:              ${t.radius}px;
+  --sh-md:          ${SHADOWS[t.shadow]};
+  --blur:           ${t.blur}px;
+  --dur:            ${t.duration}ms;
+  --ease:           ${t.ease};
+  --f-sans:         ${t.fontFamily};
+}`;
+}
+
+/* =========================================================
+   CODE BUILDERS
+   ========================================================= */
+function buildCSS() {
+  const style = REGISTRY[state.category][state.styleId];
+  const density = DENSITY[state.tokens.density];
+  return [buildVarCSS(), "", style.css(state.tokens, state.features[state.category], density)].join("\n");
+}
+
+function buildHTML() {
+  const style = REGISTRY[state.category][state.styleId];
+  return style.html(state.tokens, state.features[state.category]);
+}
+
+function buildFullPage() {
+  const css = buildCSS();
+  const html = buildHTML();
+  const bg = state.previewTheme === "dark" ? "#0b0d12" : "#f5f7fb";
+  const text = state.previewTheme === "dark" ? "#e6e9f0" : "#0f172a";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${REGISTRY[state.category][state.styleId].label} — Component UI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: ${state.tokens.fontFamily};
+      background: ${bg};
+      color: ${text};
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .demo-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+    .demo-content {
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+    }
+
+${css.split("\n").map(l => "    " + l).join("\n")}
+  </style>
+</head>
+<body>
+  <div class="demo-wrap">
+    <div class="demo-content">
+
+${html.split("\n").map(l => "      " + l).join("\n")}
+
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function buildTailwind() {
+  const t = state.tokens;
+  return `/* ═══════════════════════════════════════════════════
+   Tailwind config — extend your theme
+   ═══════════════════════════════════════════════════ */
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '${t.primary}',
+        'primary-fg': '${t.primaryFg}',
+        surface: '${t.surface}',
+        'surface-2': '${t.surface2}',
+        ink: '${t.text}',
+        'ink-muted': '${t.textMuted}',
+        border: '${t.border}',
+      },
+      borderRadius: {
+        DEFAULT: '${t.radius}px',
+        lg: '${t.radius + 4}px',
+        xl: '${t.radius + 8}px',
+      },
+      transitionDuration: {
+        DEFAULT: '${t.duration}ms',
+      },
+      transitionTimingFunction: {
+        smooth: '${t.ease}',
+      },
+    },
+  },
+};
+
+/* Example usage:
+
+  <button class="px-4 py-2 rounded bg-primary text-primary-fg font-semibold
+                 hover:brightness-110 transition-all duration-DEFAULT">
+    Get started
+  </button>
+*/`;
+}
+
+/* =========================================================
+   SYNTAX HIGHLIGHTING
+   ========================================================= */
+function hlCSS(css) {
+  let s = css.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  s = s.replace(/\/\*[\s\S]*?\*\//g, m => `<span class="cm">${m}</span>`);
+  return s.split("\n").map(line => {
+    if (line.includes('<span class="cm">')) return line;
+    line = line.replace(/(@[a-z-]+)/g, '<span class="at">$1</span>');
+    if (/\{[^}]*$/.test(line) && !/^\s*<span/.test(line)) {
+      line = line.replace(/^([^{]+?)(\s*\{.*)/, (m, sel, rest) => `<span class="sel">${sel}</span>${rest}`);
+    }
+    line = line.replace(/([a-z-]+)(\s*:\s*)([^;]+)(;?)/gi, (m, name, colon, val, semi) => {
+      if (name.startsWith("--")) {
+        const v = val.replace(/(#[0-9a-f]{3,8})/gi, '<span class="val">$1</span>');
+        return `<span class="prop">${name}</span>${colon}${v}${semi}`;
+      }
+      const v = val
+        .replace(/(#[0-9a-f]{3,8})/gi, '<span class="val">$1</span>')
+        .replace(/\b(\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw|s|ms|deg|fr)?)\b/g, '<span class="num">$1</span>')
+        .replace(/\b(cubic-bezier|translateY|scale|rotate|var|linear-gradient|color-mix|blur|hsl)\b/g, '<span class="kw">$1</span>');
+      return `<span class="prop">${name}</span>${colon}${v}${semi}`;
+    });
+    return line;
+  }).join("\n");
+}
+
+function hlHTML(html) {
+  let s = html.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  s = s.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="cm">$1</span>');
+  s = s.replace(/(&lt;\/?)([a-zA-Z0-9-]+)/g, (m, br, tag) => `<span class="kw">${br}${tag}</span>`);
+  s = s.replace(/([a-zA-Z-]+)(=)(&quot;|")([^"&]*)(&quot;|")/g, (m, attr, eq, q1, val, q2) =>
+    `<span class="attr">${attr}</span>${eq}<span class="str">${q1}${val}${q2}</span>`);
+  return s;
+}
+
+/* =========================================================
+   PREVIEW
+   ========================================================= */
+function buildPreviewHTML() {
+  const t = state.tokens;
+  const dark = state.previewTheme === "dark";
+  const css = buildCSS();
+  const html = buildHTML();
+  const cat = state.category;
+
+  // Extra preview-context CSS
+  const stageCSS = `
+    .stage {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .stage-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+    .demo-btn-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .demo-btn-row.stack {
+      flex-direction: column;
+      align-items: stretch;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+    .btn-secondary {
+      background: var(--c-surface-2);
+      color: var(--c-text);
+      border: 1px solid var(--c-border);
+    }
+    .btn-secondary:hover {
+      background: var(--c-surface);
+      border-color: var(--c-primary);
+      color: var(--c-primary);
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: #fff;
+    }
+    .btn-danger:hover { filter: brightness(1.08); }
+    .hover-hint {
+      font-size: 11px;
+      color: var(--c-text-muted);
+      text-align: center;
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .sidebar-demo-layout {
+      display: flex;
+      min-height: 100%;
+      background: ${dark ? "#0b0d12" : "#f5f7fb"};
+    }
+    .sidebar-demo-content {
+      flex: 1;
+      padding: 32px;
+      color: var(--c-text-muted);
+      overflow: auto;
+    }
+    .sidebar-demo-content h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: var(--c-text);
+      letter-spacing: -0.02em;
+    }
+    .sidebar-demo-content p {
+      margin: 0 0 20px;
+      line-height: 1.6;
+      max-width: 480px;
+    }
+    .sidebar-demo-mock {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--ui-radius, 12px);
+      padding: 24px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--c-text-muted);
+      font-size: 13px;
+    }
+  `;
+
+  let stage = "";
+  if (cat === "buttons") {
+    const f = state.features.buttons;
+    let inner = "";
+    if (f.showSizes) {
+      inner += `<div class="hover-hint">Sizes</div>
+      <div class="demo-btn-row">
+        <button class="btn btn-sm ${currentBtnClass()}">Small</button>
+        <button class="btn ${currentBtnClass()}">Default</button>
+        <button class="btn btn-lg ${currentBtnClass()}">Large</button>
+      </div>
+      <div style="height:32px"></div>`;
+    }
+    if (f.showVariants) {
+      inner += `<div class="hover-hint">Variants</div>
+      <div class="demo-btn-row">
+        <button class="btn ${currentBtnClass()}">Primary</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-danger">Danger</button>
+        <button class="btn btn-ghost" style="background:transparent;color:var(--c-text)">Ghost</button>
+      </div>
+      <div style="height:32px"></div>`;
+    }
+    if (f.showStates) {
+      inner += `<div class="hover-hint">States</div>
+      <div class="demo-btn-row">
+        <button class="btn ${currentBtnClass()}">Default</button>
+        <button class="btn ${currentBtnClass()}" style="filter:brightness(1.08); transform:translateY(-1px);">Hover</button>
+        <button class="btn ${currentBtnClass()}" disabled>Disabled</button>
+      </div>`;
+    }
+    if (!f.showSizes && !f.showVariants && !f.showStates) {
+      inner = `<div class="demo-btn-row">${html}</div>`;
+    }
+    stage = `<div class="stage-center"><div style="width:100%;max-width:600px">${inner}</div></div>`;
+  } else if (cat === "navbars") {
+    stage = `<div class="stage">${html}<div class="stage-center" style="color:var(--c-text-muted);font-size:13px">Navbar sticky demo — scroll to see it pinned (if enabled)</div></div>`;
+  } else if (cat === "sidebars") {
+    stage = `<div class="sidebar-demo-layout">${html}<div class="sidebar-demo-content">
+      <h2>Dashboard</h2>
+      <p>This is where your main content lives. The sidebar stays fixed on the left.</p>
+      <div class="sidebar-demo-mock">Content area</div>
+    </div></div>`;
+  } else {
+    stage = `<div class="stage">${html}</div>`;
+  }
+
+  return `<!DOCTYPE html>
+<html lang="en"${dark ? ' data-theme="dark"' : ''}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    font-family: ${state.tokens.fontFamily};
+    background: ${dark ? "linear-gradient(135deg,#0b0d12 0%,#12151d 50%,#1a1430 100%)" : "linear-gradient(135deg,#f5f7fb 0%,#eef2f8 50%,#f5f0fb 100%)"};
+    color: var(--c-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+${css}
+
+${stageCSS}
+</style>
+</head>
+<body>
+${stage}
+</body>
+</html>`;
+}
+
+function currentBtnClass() {
+  const id = state.styleId;
+  return "btn-" + (id === "3d" ? "3d" : id === "icon-label" ? "icon-label" : id);
+}
+
+/* =========================================================
+   REFRESH
+   ========================================================= */
+function refresh() {
+  const style = REGISTRY[state.category][state.styleId];
+  styleNameEl.textContent = style ? style.label : "";
+  buildCode();
+  updatePreview();
+}
+
+function buildCode() {
+  const tab = state.codeTab;
+  if (tab === "css") codeEl.innerHTML = hlCSS(buildCSS());
+  else if (tab === "html") codeEl.innerHTML = hlHTML(buildHTML());
+  else if (tab === "full") codeEl.innerHTML = hlHTML(buildFullPage());
+  else if (tab === "tailwind") codeEl.innerHTML = hlCSS(buildTailwind());
+}
+
+function updatePreview() {
+  const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+  doc.open();
+  doc.write(buildPreviewHTML());
+  doc.close();
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+document.querySelectorAll(".cat-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.category = btn.dataset.cat;
+    state.styleId = Object.keys(REGISTRY[state.category])[0];
+    document.querySelectorAll(".cat-tab").forEach(b => b.classList.toggle("active", b === btn));
+    renderSidebar();
+    refresh();
+  });
+});
+
+tabsEl.addEventListener("click", e => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
+  state.codeTab = t.dataset.tab;
+  tabsEl.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+  buildCode();
+});
+
+themeToggleEl.addEventListener("click", e => {
+  const t = e.target.closest("button");
+  if (!t) return;
+  state.previewTheme = t.dataset.theme;
+  themeToggleEl.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === t));
+  updatePreview();
+});
+
+viewportToggleEl.addEventListener("click", e => {
+  const t = e.target.closest("button");
+  if (!t) return;
+  state.viewport = t.dataset.w;
+  previewFrame.dataset.viewport = state.viewport;
+  viewportToggleEl.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === t));
+});
+
+copyBtn.addEventListener("click", async () => {
+  const text = codeEl.textContent;
+  try { await navigator.clipboard.writeText(text); }
+  catch (_) {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  showToast("Copied to clipboard!");
+});
+
+downloadBtn.addEventListener("click", () => {
+  const tab = state.codeTab;
+  let content, filename, mime;
+  if (tab === "css") { content = buildCSS(); filename = "component.css"; mime = "text/css"; }
+  else if (tab === "html") { content = buildHTML(); filename = "component.html"; mime = "text/html"; }
+  else if (tab === "full") { content = buildFullPage(); filename = "component-page.html"; mime = "text/html"; }
+  else { content = buildTailwind(); filename = "tailwind.config.js"; mime = "text/javascript"; }
+
+  const blob = new Blob([content], { type: mime + ";charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${filename}`);
+});
+
+let toastTimer = null;
+function showToast(msg) {
+  toastMsg.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderSidebar();
+refresh();
+
+})();
+</script>
+</body>
+</html>
