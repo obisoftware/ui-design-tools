@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wave UI — SVG Wave Generator</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#12151d;
+    --panel-2:#171b25;
+    --line:#242a38;
+    --line-2:#2e3648;
+    --text:#e6e9f0;
+    --muted:#8b93a7;
+    --accent:#6ea8fe;
+    --accent-2:#a06eff;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 800px at 75% -15%, #1a2036 0%, transparent 60%),
+      radial-gradient(900px 700px at 0% 100%, #1a1430 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  button,input,select{font:inherit;color:inherit}
+
+  /* ---------- layout ---------- */
+  .app{display:flex;flex-direction:column;height:100vh}
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:10px 18px;
+    border-bottom:1px solid var(--line);
+    background:rgba(18,21,29,.72);
+    backdrop-filter:blur(12px);
+    flex:0 0 auto;
+  }
+  .brand{
+    font-weight:700;letter-spacing:.3px;font-size:15px;
+    display:flex;align-items:center;gap:9px;white-space:nowrap;
+  }
+  .brand .dot{
+    width:20px;height:20px;border-radius:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 0 18px rgba(110,168,254,.45);
+  }
+  .hint{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hint b{color:#b9c2d6;font-weight:600}
+
+  .layout{
+    flex:1;min-height:0;
+    display:grid;
+    grid-template-columns:238px minmax(0,1fr) 400px;
+  }
+  .sidebar,.codepanel{
+    background:var(--panel);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .sidebar{border-right:1px solid var(--line)}
+  .codepanel{border-left:1px solid var(--line)}
+  .sidebar::-webkit-scrollbar,.codepanel::-webkit-scrollbar{width:9px}
+  .sidebar::-webkit-scrollbar-thumb,.codepanel::-webkit-scrollbar-thumb{
+    background:#242a38;border-radius:9px;border:2px solid var(--panel);
+  }
+
+  /* ---------- sidebar ---------- */
+  .section{padding:16px 16px;border-bottom:1px solid var(--line)}
+  .section h3{
+    margin:0 0 11px;font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;
+  }
+
+  .wavetypes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .wavetype{
+    background:var(--panel-2);
+    border:1px solid var(--line-2);
+    border-radius:9px;
+    padding:9px 6px 7px;
+    cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    transition:.15s;
+  }
+  .wavetype:hover{border-color:var(--accent);background:#1b2130;transform:translateY(-1px)}
+  .wavetype:active{transform:translateY(0)}
+  .wavetype.active{
+    border-color:var(--accent);
+    background:rgba(110,168,254,.12);
+    box-shadow:0 0 0 1px rgba(110,168,254,.25);
+  }
+  .wavetype svg{width:26px;height:26px;display:block}
+  .wavetype span{font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+  .wavetype.active span{color:var(--accent)}
+
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .switch label{font-size:13px;cursor:pointer}
+  .switch input{display:none}
+  .track{
+    width:40px;height:22px;border-radius:99px;background:#242a38;
+    position:relative;transition:.2s;flex:0 0 auto;cursor:pointer;
+  }
+  .track::after{
+    content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;
+    border-radius:50%;background:#7c879e;transition:.2s;
+  }
+  .switch input:checked + .track{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .switch input:checked + .track::after{left:21px;background:#fff}
+
+  .range-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .range-row .val{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    outline:none;margin:6px 0 2px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:#fff;border:2px solid #1a2036;cursor:grab;
+    box-shadow:0 2px 8px rgba(0,0,0,.5);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #1a2036;cursor:grab;
+  }
+  input[type=range]:disabled{opacity:.35}
+
+  .btnrow{display:flex;gap:7px;flex-wrap:wrap}
+  .btn{
+    flex:1 1 auto;
+    background:var(--panel-2);
+    border:1px solid var(--line-2);
+    border-radius:9px;
+    padding:8px 10px;
+    cursor:pointer;
+    font-size:12.5px;
+    transition:.15s;
+    white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--accent);background:#1b2130}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border:none;color:#080b12;font-weight:700;
+  }
+  .btn.primary:hover{filter:brightness(1.1)}
+  .btn.danger:hover{border-color:#f87171;color:#f87171}
+
+  .color-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .color-row label{font-size:12.5px;color:var(--muted);flex:0 0 60px}
+  .color-row input[type=color]{
+    -webkit-appearance:none;appearance:none;
+    width:36px;height:36px;border:none;border-radius:8px;
+    background:none;cursor:pointer;padding:0;
+  }
+  .color-row input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .color-row input[type=color]::-webkit-color-swatch{border:2px solid var(--line-2);border-radius:8px}
+  .color-row input[type=color]::-moz-color-swatch{border:2px solid var(--line-2);border-radius:8px}
+  .color-row .cval{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:10px}
+
+  /* ---------- stage ---------- */
+  .stage-wrap{
+    position:relative;min-width:0;min-height:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:22px;
+    background-image:radial-gradient(circle at 50% 45%, rgba(110,168,254,.07), transparent 65%);
+  }
+  #stage{
+    width:100%;height:100%;
+    touch-action:none;
+    user-select:none;
+    display:block;
+    overflow:visible;
+  }
+
+  /* ---------- code panel ---------- */
+  .codepanel .section{padding:16px}
+  .outsize{display:flex;gap:9px}
+  .field{flex:1;display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px}
+  .field label{font-size:11px;color:var(--muted);letter-spacing:.08em}
+  .field input{
+    width:100%;background:none;border:none;outline:none;
+    font-size:13px;font-variant-numeric:tabular-nums;padding:0;
+  }
+
+  .preview-wrap{
+    height:200px;border-radius:var(--radius);
+    background:
+      linear-gradient(45deg,#161a24 25%,transparent 25%,transparent 75%,#161a24 75%),
+      linear-gradient(45deg,#161a24 25%,#10131b 25%,#10131b 75%,#161a24 75%);
+    background-size:18px 18px;
+    background-position:0 0,9px 9px;
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  #previewSvg{width:100%;height:100%;display:block}
+
+  .tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{
+    background:var(--panel-2);border:1px solid var(--line-2);
+    padding:6px 11px;border-radius:8px;font-size:12px;cursor:pointer;transition:.15s;
+    color:var(--muted);
+  }
+  .tab:hover{border-color:var(--line-2);color:var(--text)}
+  .tab.active{
+    background:rgba(110,168,254,.13);
+    border-color:rgba(110,168,254,.5);
+    color:var(--accent);
+  }
+
+  pre{
+    margin:0;
+    background:#0c0f16;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:13px 14px;
+    overflow:auto;
+    max-height:280px;
+    font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#b9c9e8;
+    white-space:pre;
+    tab-size:2;
+  }
+  pre::-webkit-scrollbar{height:8px;width:8px}
+  pre::-webkit-scrollbar-thumb{background:#242a38;border-radius:8px}
+  .cm{color:#5d6a85}
+  .kw{color:#c792ea}
+  .st{color:#a5e075}
+  .fn{color:#82aaff}
+  .nm{color:#f78c6c}
+
+  .copybar{display:flex;gap:8px;margin-top:12px}
+  .copybar .btn{flex:1}
+
+  @media (max-width:1100px){
+    body{overflow:auto}
+    .app{height:auto;min-height:100vh}
+    .layout{grid-template-columns:1fr;height:auto}
+    .stage-wrap{height:60vw;max-height:460px}
+    .sidebar,.codepanel{border:none;border-top:1px solid var(--line)}
+    #stage{max-height:460px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>Wave&nbsp;UI</div>
+    <div class="hint">
+      <b>Choose</b> a wave type · <b>Tune</b> amplitude &amp; period · <b>Stack</b> layers ·
+      <b>Export</b> SVG, HTML, or CSS
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- ============ LEFT SIDEBAR ============ -->
+    <aside class="sidebar">
+
+      <div class="section">
+        <h3>Wave type</h3>
+        <div class="wavetypes" id="wavetypes"></div>
+      </div>
+
+      <div class="section">
+        <h3>Shape</h3>
+        <div class="range-row"><span>Amplitude</span><span class="val" id="ampVal">40</span></div>
+        <input type="range" id="amp" min="5" max="120" step="1" value="40">
+
+        <div class="range-row"><span>Period</span><span class="val" id="periodVal">320</span></div>
+        <input type="range" id="period" min="60" max="800" step="10" value="320">
+
+        <div class="range-row"><span>Height</span><span class="val" id="heightVal">180</span></div>
+        <input type="range" id="height" min="60" max="400" step="10" value="180">
+
+        <div class="range-row" id="layersRow"><span>Layers</span><span class="val" id="layersVal">1</span></div>
+        <input type="range" id="layers" min="1" max="3" step="1" value="1">
+      </div>
+
+      <div class="section">
+        <h3>Direction</h3>
+        <div class="switch">
+          <label for="flipH">Flip horizontal</label>
+          <input type="checkbox" id="flipH">
+          <span class="track" onclick="document.getElementById('flipH').click()"></span>
+        </div>
+        <div class="switch">
+          <label for="flipV">Flip vertical</label>
+          <input type="checkbox" id="flipV">
+          <span class="track" onclick="document.getElementById('flipV').click()"></span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Color</h3>
+        <div class="switch">
+          <label for="useGradient">Gradient</label>
+          <input type="checkbox" id="useGradient" checked>
+          <span class="track" onclick="document.getElementById('useGradient').click()"></span>
+        </div>
+
+        <div class="color-row">
+          <label for="colorA">Top / A</label>
+          <input type="color" id="colorA" value="#6ea8fe">
+          <span class="cval" id="colorAVal">#6ea8fe</span>
+        </div>
+        <div class="color-row" id="colorBRow">
+          <label for="colorB">Bottom / B</label>
+          <input type="color" id="colorB" value="#a06eff">
+          <span class="cval" id="colorBVal">#a06eff</span>
+        </div>
+
+        <div class="range-row"><span>Opacity</span><span class="val" id="opacityVal">1.00</span></div>
+        <input type="range" id="opacity" min="0" max="1" step="0.01" value="1">
+      </div>
+
+      <div class="section" style="border-bottom:none">
+        <h3>Actions</h3>
+        <div class="btnrow" style="margin-bottom:7px">
+          <button class="btn" id="btnRandom">Randomize</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="btnReset">Reset</button>
+        </div>
+        <div class="note">
+          Wave dividers are perfect for section transitions. Paste the SVG directly
+          into your HTML, or use the CSS background data URI.
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ STAGE ============ -->
+    <main class="stage-wrap">
+      <svg id="stage" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6ea8fe"/>
+            <stop offset="100%" stop-color="#a06eff"/>
+          </linearGradient>
+          <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+            <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#1a1f2c" stroke-width="1"/>
+          </pattern>
+        </defs>
+
+        <rect x="0" y="0" width="900" height="300" fill="url(#grid)" rx="10"/>
+        <g id="waveGroup"></g>
+      </svg>
+    </main>
+
+    <!-- ============ CODE PANEL ============ -->
+    <aside class="codepanel">
+      <div class="section" style="border-bottom:1px solid var(--line)">
+        <h3>Preview</h3>
+        <div class="preview-wrap">
+          <svg id="previewSvg" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+
+      <div class="section" style="border-bottom:1px solid var(--line)">
+        <h3>Output size</h3>
+        <div class="outsize">
+          <div class="field"><label>W</label><input id="outW" type="number" value="1440" min="1" max="4000"></div>
+          <div class="field"><label>H</label><input id="outH" type="number" value="320" min="1" max="4000"></div>
+        </div>
+      </div>
+
+      <div class="section" style="border-bottom:none">
+        <h3>Copy code</h3>
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="svg">SVG</button>
+          <button class="tab" data-tab="html">HTML</button>
+          <button class="tab" data-tab="cssbg">CSS background</button>
+        </div>
+        <pre id="code"></pre>
+        <div class="copybar">
+          <button class="btn primary" id="copyBtn">Copy code</button>
+          <button class="btn" id="downloadBtn">Download SVG</button>
+        </div>
+        <div class="note" id="tabNote"></div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* =========================================================
+   Constants
+   ========================================================= */
+const NS = "http://www.w3.org/2000/svg";
+const VW = 900;   // design viewBox width
+const VH = 300;   // design viewBox height
+const K  = 0.5522847498; // circle→bezier magic number (quarter arc)
+
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const round = (n, d = 2) => Math.round(n * Math.pow(10, d)) / Math.pow(10, d);
+
+/* =========================================================
+   DOM
+   ========================================================= */
+const stageSvg   = document.getElementById("stage");
+const waveGroup  = document.getElementById("waveGroup");
+const previewSvg = document.getElementById("previewSvg");
+
+const ampEl      = document.getElementById("amp");
+const periodEl   = document.getElementById("period");
+const heightEl   = document.getElementById("height");
+const layersEl   = document.getElementById("layers");
+
+const ampVal     = document.getElementById("ampVal");
+const periodVal  = document.getElementById("periodVal");
+const heightVal  = document.getElementById("heightVal");
+const layersVal  = document.getElementById("layersVal");
+const layersRow  = document.getElementById("layersRow");
+
+const flipHEl    = document.getElementById("flipH");
+const flipVEl    = document.getElementById("flipV");
+
+const useGradEl  = document.getElementById("useGradient");
+const colorAEl   = document.getElementById("colorA");
+const colorBEl   = document.getElementById("colorB");
+const colorAVal  = document.getElementById("colorAVal");
+const colorBVal  = document.getElementById("colorBVal");
+const colorBRow  = document.getElementById("colorBRow");
+
+const opacityEl  = document.getElementById("opacity");
+const opacityVal = document.getElementById("opacityVal");
+
+const outWEl     = document.getElementById("outW");
+const outHEl     = document.getElementById("outH");
+const codeEl     = document.getElementById("code");
+const tabNote    = document.getElementById("tabNote");
+const copyBtn    = document.getElementById("copyBtn");
+const downloadBtn= document.getElementById("downloadBtn");
+
+/* =========================================================
+   State
+   ========================================================= */
+let waveType = "sine";
+let amp = 40;
+let period = 320;
+let height = 180;
+let layers = 1;
+let flipH = false;
+let flipV = false;
+let useGradient = true;
+let colorA = "#6ea8fe";
+let colorB = "#a06eff";
+let opacity = 1;
+let outW = 1440;
+let outH = 320;
+let activeTab = "svg";
+
+/* =========================================================
+   Wave path generators
+   ========================================================= */
+
+/* ---------- SINE (cubic Bézier approximation) ---------- */
+function sinePath(w, h, amp, period) {
+  // baseline is the flat line the wave oscillates around.
+  // For a bottom-anchored divider, the wave sits near the top.
+  const base = h * 0.5;
+  const half = period / 2;
+  const cp = half * K;          // control-point offset for a quarter arc
+
+  let d = `M0,${h} L0,${base}`;
+  let x = 0;
+  let dir = -1;                 // start going up
+
+  while (x < w + period) {
+    const nx = x + half;
+    // first half of the period
+    d += ` C${x + cp},${base + dir * amp * 1.33} ${nx - cp},${base + dir * amp * 1.33} ${nx},${base}`;
+    x = nx;
+    dir *= -1;
+    // second half of the period
+    const nx2 = x + half;
+    d += ` C${x + cp},${base + dir * amp * 1.33} ${nx2 - cp},${base + dir * amp * 1.33} ${nx2},${base}`;
+    x = nx2;
+    dir *= -1;
+    if (x > w + period * 2) break;
+  }
+  d += ` L${w},${h} Z`;
+  return d;
+}
+
+/* ---------- LAYERED (multiple sine waves, each with phase + scale) ---------- */
+function layeredPaths(w, h, amp, period, count) {
+  const paths = [];
+  for (let i = 0; i < count; i++) {
+    const scale   = 1 - i * 0.28;
+    const offset  = (h * 0.14) * i;
+    const phase   = period * i * 0.35;
+    const layerAmp = amp * scale;
+
+    const base = h * 0.5 + offset;
+    const half = period / 2;
+    const cp   = half * K;
+
+    let d = `M0,${h} L0,${base}`;
+    let x = -phase;
+    let dir = -1;
+
+    while (x < w + period) {
+      const nx = x + half;
+      d += ` C${x + cp},${base + dir * layerAmp * 1.33} ${nx - cp},${base + dir * layerAmp * 1.33} ${nx},${base}`;
+      x = nx;
+      dir *= -1;
+      const nx2 = x + half;
+      d += ` C${x + cp},${base + dir * layerAmp * 1.33} ${nx2 - cp},${base + dir * layerAmp * 1.33} ${nx2},${base}`;
+      x = nx2;
+      dir *= -1;
+      if (x > w + period * 2) break;
+    }
+    d += ` L${w},${h} Z`;
+    paths.push({ d, opacity: 1 - i * 0.2 });
+  }
+  return paths;
+}
+
+/* ---------- SHARK FIN (asymmetric peaks) ---------- */
+function sharkFinPath(w, h, amp, period) {
+  const base = h * 0.5;
+  const half = period / 2;
+  let d = `M0,${h} L0,${base}`;
+  let x = 0;
+  let dir = -1;
+
+  while (x < w + period) {
+    const peak = x + half * 0.35;
+    const trough = x + half;
+    const next = x + period;
+
+    // sharp rise to peak
+    d += ` C${x + half * 0.1},${base} ${peak - half * 0.1},${base + dir * amp * 1.6} ${peak},${base + dir * amp * 1.6}`;
+    // steep drop to trough
+    d += ` C${peak + half * 0.08},${base + dir * amp * 1.6} ${trough - half * 0.08},${base} ${trough},${base}`;
+    // flat segment
+    d += ` L${next},${base}`;
+
+    x = next;
+    dir *= -1;
+    if (x > w + period * 2) break;
+  }
+  d += ` L${w},${h} Z`;
+  return d;
+}
+
+/* ---------- STEP (staircase) ---------- */
+function stepPath(w, h, amp, period) {
+  const base = h * 0.5;
+  const levels = [0, 0.4, 0.7, 1.0, 0.6, 0.2];
+  const stepW = period / levels.length;
+  let d = `M0,${h} L0,${base}`;
+  let x = 0;
+  let i = 0;
+
+  while (x < w + period) {
+    const level = levels[i % levels.length];
+    const y = base - amp * level;
+    d += ` L${x},${y} L${x + stepW},${y}`;
+    x += stepW;
+    i++;
+    if (x > w + period * 2) break;
+  }
+  d += ` L${w},${h} Z`;
+  return d;
+}
+
+/* ---------- BUMPS (repeated semicircle arcs) ---------- */
+function bumpsPath(w, h, amp, period) {
+  const base = h * 0.5;
+  const r = Math.min(period / 2, amp);
+  const rcp = r * K;
+  let d = `M0,${h} L0,${base}`;
+  let x = 0;
+  let up = true;
+
+  while (x < w + period) {
+    const nx = x + period;
+    if (up) {
+      // upward bump (semicircle above baseline)
+      d += ` C${x + rcp},${base - r} ${nx - rcp},${base - r} ${nx},${base}`;
+    } else {
+      // downward bump (semicircle below baseline)
+      d += ` C${x + rcp},${base + r} ${nx - rcp},${base + r} ${nx},${base}`;
+    }
+    x = nx;
+    up = !up;
+    if (x > w + period * 2) break;
+  }
+  d += ` L${w},${h} Z`;
+  return d;
+}
+
+/* ---------- master generator ---------- */
+function generateWaves() {
+  const w = VW, h = VH;
+  const results = [];
+
+  if (waveType === "layered") {
+    const count = layers;
+    const paths = layeredPaths(w, h, amp, period, count);
+    paths.forEach((p, i) => {
+      results.push({
+        d: p.d,
+        opacity: opacity * p.opacity,
+        fill: useGradient ? "url(#waveGrad)" : colorA
+      });
+    });
+  } else {
+    let d;
+    switch (waveType) {
+      case "sine":      d = sinePath(w, h, amp, period); break;
+      case "sharkfin":  d = sharkFinPath(w, h, amp, period); break;
+      case "step":      d = stepPath(w, h, amp, period); break;
+      case "bumps":     d = bumpsPath(w, h, amp, period); break;
+      default:          d = sinePath(w, h, amp, period);
+    }
+    results.push({
+      d,
+      opacity,
+      fill: useGradient ? "url(#waveGrad)" : colorA
+    });
+  }
+
+  return results;
+}
+
+/* =========================================================
+   Rendering
+   ========================================================= */
+function render() {
+  // update gradient stops
+  const grad = document.getElementById("waveGrad");
+  if (grad) {
+    grad.children[0].setAttribute("stop-color", colorA);
+    grad.children[1].setAttribute("stop-color", colorB);
+  }
+
+  const waves = generateWaves();
+
+  // ---- stage ----
+  const frag = document.createDocumentFragment();
+  waves.forEach((wv) => {
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", wv.d);
+    p.setAttribute("fill", wv.fill);
+    p.setAttribute("opacity", wv.opacity);
+    frag.appendChild(p);
+  });
+  waveGroup.replaceChildren(frag);
+
+  // ---- preview ----
+  renderPreview(waves);
+
+  // ---- code ----
+  renderCode(waves);
+  updateOutputSize();
+}
+
+function renderPreview(waves) {
+  const frag = document.createDocumentFragment();
+  waves.forEach((wv) => {
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", wv.d);
+    p.setAttribute("fill", wv.fill);
+    p.setAttribute("opacity", wv.opacity);
+    frag.appendChild(p);
+  });
+  previewSvg.replaceChildren(frag);
+}
+
+/* =========================================================
+   Code generation
+   ========================================================= */
+function buildSvgMarkup(waves, w, h, includeXmlns) {
+  const xmlns = includeXmlns ? ' xmlns="http://www.w3.org/2000/svg"' : "";
+  let defs = "";
+  if (useGradient) {
+    defs = `<defs>
+    <linearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${colorA}"/>
+      <stop offset="100%" stop-color="${colorB}"/>
+    </linearGradient>
+  </defs>`;
+  }
+
+  const paths = waves.map((wv) => {
+    const fill = wv.fill === "url(#waveGrad)" ? "url(#waveGrad)" : wv.fill;
+    const op = wv.opacity < 1 ? ` opacity="${round(wv.opacity, 2)}"` : "";
+    return `  <path fill="${fill}"${op} d="${wv.d}"/>`;
+  }).join("\n");
+
+  return `<svg${xmlns} viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+${defs}
+${paths}
+</svg>`;
+}
+
+function renderCode(waves) {
+  const w = outW, h = outH;
+  const svgMarkup = buildSvgMarkup(waves, w, h, true);
+  const svgMarkupNoXmlns = buildSvgMarkup(waves, w, h, false);
+
+  if (activeTab === "svg") {
+    codeEl.textContent = svgMarkup;
+    tabNote.innerHTML =
+      "Paste this SVG directly into your HTML. " +
+      "Use <b>preserveAspectRatio=\"none\"</b> to stretch it across any width.";
+  } else if (activeTab === "html") {
+    codeEl.textContent =
+      `<div class="wave-divider">\n${svgMarkupNoXmlns}\n</div>`;
+    tabNote.innerHTML =
+      "Wrap the SVG in a <b>&lt;div class=\"wave-divider\"&gt;</b>. " +
+      "Set the div to <b>width:100%</b> and the SVG will scale automatically.";
+  } else {
+    // CSS background data URI
+    const encoded = encodeURIComponent(svgMarkup)
+      .replace(/'/g, "%27")
+      .replace(/"/g, "%22");
+    const css =
+`.wave-divider {
+  width: 100%;
+  height: ${h}px;
+  background-image: url("data:image/svg+xml,${encoded}");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: bottom center;
+}`;
+    codeEl.textContent = css;
+    tabNote.innerHTML =
+      "Drop this into your stylesheet. The wave fills the element as a background image. " +
+      "Adjust <b>height</b> to control how tall the wave band is.";
+  }
+}
+
+function updateOutputSize() {
+  // scale paths to output dimensions for the preview / code
+  // (the viewBox stays 900x300; output size only affects the CSS box)
+}
+
+/* =========================================================
+   Wave type buttons
+   ========================================================= */
+const WAVE_TYPES = [
+  { id: "sine",     label: "Sine",      icon: '<path d="M2 13 Q 8 3, 13 13 T 24 13" stroke="url(#wg)" stroke-width="2" fill="none"/>' },
+  { id: "layered",  label: "Layered",   icon: '<path d="M2 15 Q 8 7, 13 15 T 24 15" stroke="url(#wg)" stroke-width="2" fill="none"/><path d="M2 19 Q 8 12, 13 19 T 24 19" stroke="url(#wg)" stroke-width="1.4" fill="none" opacity=".6"/>' },
+  { id: "sharkfin", label: "Shark Fin", icon: '<path d="M2 18 L8 6 L11 16 L18 6 L21 16 L24 10" stroke="url(#wg)" stroke-width="2" fill="none" stroke-linejoin="round"/>' },
+  { id: "step",     label: "Step",      icon: '<path d="M2 20 L6 20 L6 14 L10 14 L10 8 L14 8 L14 16 L18 16 L18 10 L22 10 L22 20 L24 20" stroke="url(#wg)" stroke-width="2" fill="none" stroke-linejoin="round"/>' },
+  { id: "bumps",    label: "Bumps",     icon: '<path d="M2 16 A4 4 0 0 1 10 16 A4 4 0 0 1 18 16 A4 4 0 0 1 24 16" stroke="url(#wg)" stroke-width="2" fill="none"/>' }
+];
+
+function buildWaveTypeButtons() {
+  const wrap = document.getElementById("wavetypes");
+  WAVE_TYPES.forEach((t) => {
+    const b = document.createElement("button");
+    b.className = "wavetype" + (t.id === waveType ? " active" : "");
+    b.dataset.id = t.id;
+    b.innerHTML = `<svg viewBox="0 0 26 26" fill="none">
+      <defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#6ea8fe"/><stop offset="100%" stop-color="#a06eff"/>
+      </linearGradient></defs>${t.icon}</svg><span>${t.label}</span>`;
+    b.addEventListener("click", () => {
+      waveType = t.id;
+      document.querySelectorAll(".wavetype").forEach((x) => x.classList.toggle("active", x === b));
+      layersRow.style.display = t.id === "layered" ? "" : "none";
+      render();
+    });
+    wrap.appendChild(b);
+  });
+  layersRow.style.display = waveType === "layered" ? "" : "none";
+}
+
+/* =========================================================
+   Controls
+   ========================================================= */
+ampEl.addEventListener("input", () => {
+  amp = parseFloat(ampEl.value);
+  ampVal.textContent = amp;
+  render();
+});
+
+periodEl.addEventListener("input", () => {
+  period = parseFloat(periodEl.value);
+  periodVal.textContent = period;
+  render();
+});
+
+heightEl.addEventListener("input", () => {
+  height = parseFloat(heightEl.value);
+  heightVal.textContent = height;
+  // height affects the visual band; we adjust the wave's baseline region
+  render();
+});
+
+layersEl.addEventListener("input", () => {
+  layers = parseInt(layersEl.value, 10);
+  layersVal.textContent = layers;
+  render();
+});
+
+flipHEl.addEventListener("change", () => { flipH = flipHEl.checked; render(); });
+flipVEl.addEventListener("change", () => { flipV = flipVEl.checked; render(); });
+
+useGradEl.addEventListener("change", () => {
+  useGradient = useGradEl.checked;
+  colorBRow.style.display = useGradient ? "" : "none";
+  render();
+});
+
+colorAEl.addEventListener("input", () => {
+  colorA = colorAEl.value;
+  colorAVal.textContent = colorA;
+  render();
+});
+
+colorBEl.addEventListener("input", () => {
+  colorB = colorBEl.value;
+  colorBVal.textContent = colorB;
+  render();
+});
+
+opacityEl.addEventListener("input", () => {
+  opacity = parseFloat(opacityEl.value);
+  opacityVal.textContent = opacity.toFixed(2);
+  render();
+});
+
+outWEl.addEventListener("input", () => {
+  outW = clamp(parseInt(outWEl.value, 10) || 1, 1, 4000);
+  render();
+});
+outHEl.addEventListener("input", () => {
+  outH = clamp(parseInt(outHEl.value, 10) || 1, 1, 4000);
+  render();
+});
+
+/* ---- tabs ---- */
+document.getElementById("tabs").addEventListener("click", (e) => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
+  activeTab = t.dataset.tab;
+  document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === t));
+  render();
+});
+
+/* ---- copy ---- */
+copyBtn.addEventListener("click", async () => {
+  const text = codeEl.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  const old = copyBtn.textContent;
+  copyBtn.textContent = "✓ Copied!";
+  copyBtn.disabled = true;
+  setTimeout(() => {
+    copyBtn.textContent = old;
+    copyBtn.disabled = false;
+  }, 1200);
+});
+
+/* ---- download ---- */
+downloadBtn.addEventListener("click", () => {
+  const waves = generateWaves();
+  const svg = buildSvgMarkup(waves, outW, outH, true);
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `wave-${waveType}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+/* ---- randomize ---- */
+document.getElementById("btnRandom").addEventListener("click", () => {
+  const types = WAVE_TYPES.map((t) => t.id);
+  waveType = types[Math.floor(Math.random() * types.length)];
+  document.querySelectorAll(".wavetype").forEach((x) =>
+    x.classList.toggle("active", x.dataset.id === waveType)
+  );
+  layersRow.style.display = waveType === "layered" ? "" : "none";
+
+  amp = Math.floor(Math.random() * 90) + 15;
+  period = Math.floor(Math.random() * 55) * 10 + 100;
+  height = Math.floor(Math.random() * 30) * 10 + 100;
+  layers = waveType === "layered" ? Math.floor(Math.random() * 3) + 1 : 1;
+
+  ampEl.value = amp; ampVal.textContent = amp;
+  periodEl.value = period; periodVal.textContent = period;
+  heightEl.value = height; heightVal.textContent = height;
+  layersEl.value = layers; layersVal.textContent = layers;
+
+  const hues = [200, 220, 240, 260, 280, 300, 320, 340];
+  const h1 = hues[Math.floor(Math.random() * hues.length)];
+  const h2 = (h1 + 40) % 360;
+  colorA = hslToHex(h1, 70, 65);
+  colorB = hslToHex(h2, 70, 55);
+  colorAEl.value = colorA; colorAVal.textContent = colorA;
+  colorBEl.value = colorB; colorBVal.textContent = colorB;
+
+  render();
+});
+
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const toHex = (x) => {
+    const hex = Math.round(255 * x).toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+  };
+  return "#" + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
+}
+
+/* ---- reset ---- */
+document.getElementById("btnReset").addEventListener("click", () => {
+  waveType = "sine";
+  amp = 40; period = 320; height = 180; layers = 1;
+  flipH = false; flipV = false;
+  useGradient = true;
+  colorA = "#6ea8fe"; colorB = "#a06eff";
+  opacity = 1;
+
+  ampEl.value = amp; ampVal.textContent = amp;
+  periodEl.value = period; periodVal.textContent = period;
+  heightEl.value = height; heightVal.textContent = height;
+  layersEl.value = layers; layersVal.textContent = layers;
+  flipHEl.checked = false; flipVEl.checked = false;
+  useGradEl.checked = true;
+  colorAEl.value = colorA; colorAVal.textContent = colorA;
+  colorBEl.value = colorB; colorBVal.textContent = colorB;
+  opacityEl.value = opacity; opacityVal.textContent = opacity.toFixed(2);
+  colorBRow.style.display = "";
+
+  document.querySelectorAll(".wavetype").forEach((x) =>
+    x.classList.toggle("active", x.dataset.id === "sine")
+  );
+  layersRow.style.display = "none";
+
+  render();
+});
+
+/* =========================================================
+   Init
+   ========================================================= */
+buildWaveTypeButtons();
+render();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Icon UI — Copy SVG Icons Offline</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#12151d;
+    --panel-2:#171b25;
+    --panel-3:#1b2130;
+    --line:#242a38;
+    --line-2:#2e3648;
+    --text:#e6e9f0;
+    --muted:#8b93a7;
+    --muted-2:#6b7488;
+    --accent:#6ea8fe;
+    --accent-2:#a06eff;
+    --good:#4ade80;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 800px at 75% -15%, #1a2036 0%, transparent 60%),
+      radial-gradient(900px 700px at 0% 100%, #1a1430 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  button,input,select{font:inherit;color:inherit}
+
+  .app{display:flex;flex-direction:column;height:100vh}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:16px;
+    padding:10px 18px;
+    border-bottom:1px solid var(--line);
+    background:rgba(18,21,29,.75);
+    backdrop-filter:blur(14px);
+    flex:0 0 auto;
+    flex-wrap:wrap;
+  }
+  .brand{
+    font-weight:700;letter-spacing:.3px;font-size:15px;
+    display:flex;align-items:center;gap:9px;white-space:nowrap;
+  }
+  .brand .dot{
+    width:20px;height:20px;border-radius:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 0 18px rgba(110,168,254,.45);
+  }
+  .search-wrap{
+    flex:1 1 240px;
+    min-width:180px;
+    max-width:440px;
+    position:relative;
+  }
+  .search-wrap svg{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;pointer-events:none;color:var(--muted);
+  }
+  #search{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line-2);
+    border-radius:10px;
+    padding:9px 34px 9px 36px;
+    font-size:13px;
+    outline:none;
+    transition:.15s;
+  }
+  #search::placeholder{color:var(--muted-2)}
+  #search:hover{border-color:var(--line-2)}
+  #search:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(110,168,254,.15)}
+  .search-clear{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:var(--muted);cursor:pointer;
+    padding:4px;border-radius:6px;display:none;
+  }
+  .search-clear:hover{color:var(--text);background:var(--panel-3)}
+  .search-clear.vis{display:block}
+
+  .toolbar-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ctrl{
+    display:flex;align-items:center;gap:7px;
+    background:var(--panel-2);
+    border:1px solid var(--line-2);
+    border-radius:9px;
+    padding:6px 10px;
+    font-size:12px;
+  }
+  .ctrl label{color:var(--muted);font-size:11px;letter-spacing:.05em}
+  .ctrl input[type=number]{
+    width:46px;background:none;border:none;outline:none;
+    font-size:13px;font-variant-numeric:tabular-nums;padding:0;
+  }
+  .ctrl input[type=color]{
+    -webkit-appearance:none;appearance:none;
+    width:24px;height:24px;border:none;border-radius:6px;
+    background:none;cursor:pointer;padding:0;
+  }
+  .ctrl input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .ctrl input[type=color]::-webkit-color-swatch{border:2px solid var(--line-2);border-radius:6px}
+  .ctrl input[type=color]::-moz-color-swatch{border:2px solid var(--line-2);border-radius:6px}
+  .ctrl select{
+    background:none;border:none;outline:none;font-size:12.5px;
+    cursor:pointer;padding:2px 0;
+  }
+  .ctrl select option{background:#12151d;color:#e6e9f0}
+
+  /* ---------- layout ---------- */
+  .layout{
+    flex:1;min-height:0;
+    display:grid;
+    grid-template-columns:236px minmax(0,1fr) 360px;
+  }
+  .sidebar,.detail{
+    background:var(--panel);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .sidebar{border-right:1px solid var(--line)}
+  .detail{border-left:1px solid var(--line)}
+  .sidebar::-webkit-scrollbar,.detail::-webkit-scrollbar,
+  .main::-webkit-scrollbar{width:9px;height:9px}
+  .sidebar::-webkit-scrollbar-thumb,.detail::-webkit-scrollbar-thumb,
+  .main::-webkit-scrollbar-thumb{
+    background:#242a38;border-radius:9px;border:2px solid var(--panel);
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar{padding:14px 10px 24px}
+  .cat-title{
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted-2);font-weight:600;
+    padding:12px 8px 6px;
+  }
+  .cat{
+    display:flex;align-items:center;gap:9px;
+    width:100%;
+    background:none;border:none;
+    text-align:left;
+    padding:8px 10px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+    transition:.12s;
+    color:var(--muted);
+  }
+  .cat:hover{background:var(--panel-2);color:var(--text)}
+  .cat.active{
+    background:rgba(110,168,254,.12);
+    color:var(--accent);
+    font-weight:600;
+  }
+  .cat .ico{width:16px;height:16px;flex:0 0 auto;display:flex}
+  .cat .ico svg{width:16px;height:16px}
+  .cat .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cat .ct{
+    font-size:11px;
+    color:var(--muted-2);
+    font-variant-numeric:tabular-nums;
+    background:var(--panel-2);
+    border-radius:20px;
+    padding:1px 7px;
+    min-width:24px;
+    text-align:center;
+  }
+  .cat.active .ct{background:rgba(110,168,254,.2);color:var(--accent)}
+
+  /* ---------- main ---------- */
+  .main{
+    min-width:0;min-height:0;
+    overflow-y:auto;
+    padding:18px 20px 40px;
+  }
+  .main-head{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;margin-bottom:14px;flex-wrap:wrap;
+  }
+  .main-title{
+    font-size:16px;font-weight:600;letter-spacing:.1px;
+    display:flex;align-items:baseline;gap:8px;
+  }
+  .main-title .sub{font-size:12px;color:var(--muted);font-weight:400}
+
+  .btn{
+    background:var(--panel-2);
+    border:1px solid var(--line-2);
+    border-radius:9px;
+    padding:7px 12px;
+    cursor:pointer;
+    font-size:12.5px;
+    transition:.15s;
+    white-space:nowrap;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .btn:hover{border-color:var(--accent);background:var(--panel-3)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border:none;color:#080b12;font-weight:700;
+  }
+  .btn.primary:hover{filter:brightness(1.1)}
+  .btn svg{width:14px;height:14px}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(108px, 1fr));
+    gap:10px;
+  }
+  .card{
+    position:relative;
+    background:var(--panel-2);
+    border:1px solid var(--line-2);
+    border-radius:11px;
+    padding:16px 8px 10px;
+    display:flex;flex-direction:column;align-items:center;gap:9px;
+    cursor:pointer;
+    transition:.15s;
+    overflow:hidden;
+  }
+  .card:hover{
+    border-color:var(--accent);
+    background:var(--panel-3);
+    transform:translateY(-2px);
+    box-shadow:0 8px 22px rgba(0,0,0,.35);
+  }
+  .card.sel{
+    border-color:var(--accent);
+    background:rgba(110,168,254,.1);
+    box-shadow:0 0 0 3px rgba(110,168,254,.14);
+  }
+  .card .glyph{
+    color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    height:30px;
+  }
+  .card:hover .glyph{color:var(--accent)}
+  .card.sel .glyph{color:var(--accent)}
+  .card .name{
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+    line-height:1.3;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:100%;
+  }
+  .card:hover .name,.card.sel .name{color:var(--text)}
+
+  .card .mini-copy{
+    position:absolute;
+    top:6px;right:6px;
+    background:var(--accent);
+    color:#080b12;
+    border:none;
+    border-radius:6px;
+    width:22px;height:22px;
+    display:none;align-items:center;justify-content:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .card:hover .mini-copy{display:flex}
+  .card .mini-copy:hover{filter:brightness(1.15)}
+  .card .mini-copy svg{width:11px;height:11px}
+
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty svg{width:38px;height:38px;opacity:.5;margin-bottom:10px}
+
+  /* ---------- detail panel ---------- */
+  .detail{padding:16px}
+  .detail h3{
+    margin:0 0 11px;font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;
+  }
+  .detail-section{padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .detail-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+
+  .big-preview{
+    height:160px;
+    border-radius:var(--radius);
+    background:
+      linear-gradient(45deg,#161a24 25%,transparent 25%,transparent 75%,#161a24 75%),
+      linear-gradient(45deg,#161a24 25%,#10131b 25%,#10131b 75%,#161a24 75%);
+    background-size:18px 18px;
+    background-position:0 0,9px 9px;
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    position:relative;
+  }
+  .big-preview .icon-holder{
+    color:#e6e9f0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .big-preview .empty-hint{
+    color:var(--muted-2);font-size:12px;
+  }
+
+  .detail-name{
+    font-size:16px;font-weight:600;
+    margin:12px 0 3px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .detail-cat{
+    font-size:11.5px;color:var(--muted);
+    margin-bottom:12px;
+  }
+
+  .tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+  .tab{
+    background:var(--panel-2);border:1px solid var(--line-2);
+    padding:5px 10px;border-radius:7px;font-size:11.5px;cursor:pointer;
+    transition:.15s;color:var(--muted);
+  }
+  .tab:hover{color:var(--text)}
+  .tab.active{
+    background:rgba(110,168,254,.13);
+    border-color:rgba(110,168,254,.5);
+    color:var(--accent);
+  }
+
+  pre{
+    margin:0;
+    background:#0c0f16;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 13px;
+    overflow:auto;
+    max-height:240px;
+    font:11.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#b9c9e8;
+    white-space:pre;
+    tab-size:2;
+  }
+  pre::-webkit-scrollbar{height:8px;width:8px}
+  pre::-webkit-scrollbar-thumb{background:#242a38;border-radius:8px}
+  pre .t{color:#82aaff}
+
+  .copybar{display:flex;gap:8px;margin-top:11px}
+  .copybar .btn{flex:1;justify-content:center}
+
+  .hint-note{
+    font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:10px;
+  }
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;
+    left:50%;bottom:26px;
+    transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#080b12;
+    font-weight:700;
+    font-size:13px;
+    padding:10px 20px;
+    border-radius:11px;
+    box-shadow:0 10px 30px rgba(110,168,254,.4);
+    opacity:0;
+    pointer-events:none;
+    transition:.25s;
+    z-index:100;
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:15px;height:15px}
+
+  @media (max-width:1180px){
+    .layout{grid-template-columns:210px minmax(0,1fr) 320px}
+    .grid{grid-template-columns:repeat(auto-fill, minmax(96px, 1fr))}
+  }
+  @media (max-width:920px){
+    body{overflow:auto}
+    .app{height:auto;min-height:100vh}
+    .layout{grid-template-columns:1fr;height:auto}
+    .sidebar{border:none;border-bottom:1px solid var(--line);max-height:260px}
+    .detail{border:none;border-top:1px solid var(--line)}
+    .main{max-height:none;overflow:visible}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ TOPBAR ============ -->
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>Icon&nbsp;UI</div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input id="search" type="text" placeholder="Search 140+ icons…  (press / to focus)" autocomplete="off" spellcheck="false">
+      <button class="search-clear" id="searchClear" aria-label="Clear">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="toolbar-controls">
+      <div class="ctrl">
+        <label for="size">Size</label>
+        <input id="size" type="number" value="24" min="12" max="128" step="1">
+        <span style="color:var(--muted);font-size:11px">px</span>
+      </div>
+      <div class="ctrl">
+        <label for="stroke">Stroke</label>
+        <select id="stroke">
+          <option value="1">1</option>
+          <option value="1.25">1.25</option>
+          <option value="1.5">1.5</option>
+          <option value="1.75">1.75</option>
+          <option value="2" selected>2</option>
+          <option value="2.25">2.25</option>
+          <option value="2.5">2.5</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label for="color">Color</label>
+        <input id="color" type="color" value="#e6e9f0">
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ LAYOUT ============ -->
+  <div class="layout">
+
+    <!-- ---- SIDEBAR ---- -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- ---- MAIN ---- -->
+    <main class="main" id="main">
+      <div class="main-head">
+        <div class="main-title">
+          <span id="viewTitle">All icons</span>
+          <span class="sub" id="viewCount"></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="copyAllBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            Copy all visible
+          </button>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </main>
+
+    <!-- ---- DETAIL PANEL ---- -->
+    <aside class="detail">
+      <div class="detail-section">
+        <h3>Preview</h3>
+        <div class="big-preview" id="bigPreview">
+          <div class="empty-hint">Select an icon</div>
+        </div>
+        <div class="detail-name" id="detailName">
+          <span style="color:var(--muted);font-weight:400;font-size:14px">Nothing selected</span>
+        </div>
+        <div class="detail-cat" id="detailCat"></div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Code</h3>
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="svg">SVG</button>
+          <button class="tab" data-tab="jsx">React (JSX)</button>
+          <button class="tab" data-tab="datauri">Data URI</button>
+        </div>
+        <pre id="code">Select an icon to see its code here.</pre>
+        <div class="copybar">
+          <button class="btn primary" id="copyBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            Copy code
+          </button>
+        </div>
+        <div class="hint-note" id="tabNote">
+          Pick an icon from the grid, then copy its SVG into your project.
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Quick tips</h3>
+        <div class="hint-note">
+          • SVG output uses <code style="background:#1b2130;padding:1px 5px;border-radius:4px">stroke="currentColor"</code> so it inherits your CSS <b>color</b>.<br><br>
+          • Use <b>Data URI</b> tab to paste icons directly into CSS <code style="background:#1b2130;padding:1px 5px;border-radius:4px">background-image</code>.<br><br>
+          • Click any icon to select · hover and hit the blue button to copy instantly.
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toastMsg">Copied!</span>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* =========================================================
+   ICON LIBRARY
+   Each entry: [name, body, aliases?]
+   Body is the inner SVG (paths, circles, etc.) designed for
+   a 24×24 viewBox with stroke-based rendering.
+   ========================================================= */
+const LIBRARY = [
+  { cat: "Navigation", icon: "compass", icons: [
+    ["Menu",     '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>', "burger hamburger nav"],
+    ["Close",    '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', "x cancel dismiss"],
+    ["Chevron Left",  '<path d="m15 18-6-6 6-6"/>', "back prev"],
+    ["Chevron Right", '<path d="m9 18 6-6-6-6"/>', "forward next"],
+    ["Chevron Up",    '<path d="m18 15-6-6-6 6"/>', "collapse up"],
+    ["Chevron Down",  '<path d="m6 9 6 6 6-6"/>', "expand down"],
+    ["Arrow Left",  '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>', "back"],
+    ["Arrow Right", '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', "next forward"],
+    ["Arrow Up",    '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>', "top"],
+    ["Arrow Down",  '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>', "bottom"],
+    ["Home", '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>', "house main"],
+    ["More Horizontal", '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>', "dots ellipsis menu"],
+    ["More Vertical",   '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>', "dots kebab"],
+    ["Search", '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', "find magnify"],
+    ["External Link", '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>', "new tab open"]
+  ]},
+
+  { cat: "Hero & Sections", icon: "sparkles", icons: [
+    ["Play",    '<path d="m5 3 14 9-14 9z"/>', "start video"],
+    ["Pause",   '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>', "stop"],
+    ["Star",    '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', "favorite rating"],
+    ["Sparkles",'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>', "magic ai"],
+    ["Zap",     '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', "lightning fast bolt"],
+    ["Rocket",  '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>', "launch startup"],
+    ["Check Circle", '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>', "success done"],
+    ["Arrow Right Circle", '<circle cx="12" cy="12" r="10"/><path d="m12 16 4-4-4-4"/><path d="M8 12h8"/>', "cta button"],
+    ["Mouse Pointer", '<path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="m13 13 6 6"/>', "cursor click"],
+    ["Layers",  '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>', "stack"],
+    ["Layout Grid", '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>', "grid tiles"],
+    ["Trending Up", '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>', "growth stats"],
+    ["Award",   '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>', "badge trophy"]
+  ]},
+
+  { cat: "Sidebar & Layout", icon: "layout", icons: [
+    ["Panel Left",  '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>', "sidebar drawer left"],
+    ["Panel Right", '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>', "sidebar drawer right"],
+    ["Panel Top",   '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/>', "header topbar"],
+    ["Panel Bottom",'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 15h18"/>', "footer bottom"],
+    ["List", '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>', "menu items"],
+    ["Layout Dashboard", '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>', "admin dashboard"],
+    ["Bar Chart", '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>', "stats analytics"],
+    ["Settings", '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>', "gear cog preferences"],
+    ["User", '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', "profile account avatar"],
+    ["Users", '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', "team group"],
+    ["Log Out", '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>', "signout exit"],
+    ["Log In",  '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>', "signin enter"],
+    ["Bell",    '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>', "notification alert"],
+    ["Sidebar", '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M13 8h4"/><path d="M13 12h4"/><path d="M13 16h4"/>', "nav drawer"],
+    ["Columns", '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>', "split two columns"]
+  ]},
+
+  { cat: "Frontend", icon: "code", icons: [
+    ["Code",     '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>', "dev programming tags"],
+    ["Terminal", '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>', "console command cli"],
+    ["Braces",   '<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>', "json object"],
+    ["Cpu",  '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>', "chip processor"],
+    ["Component", '<path d="M5.5 8.5 9 12l-3.5 3.5L2 12l3.5-3.5Z"/><path d="m12 2 3.5 3.5L12 9 8.5 5.5 12 2Z"/><path d="M18.5 8.5 22 12l-3.5 3.5L15 12l3.5-3.5Z"/><path d="m12 15 3.5 3.5L12 22l-3.5-3.5L12 15Z"/>', "react vue module"],
+    ["Box",  '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>', "package 3d"],
+    ["Palette",'<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>', "color theme design"],
+    ["Type",   '<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>', "text font typography"],
+    ["Image",  '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>', "photo picture gallery"],
+    ["Film",   '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/>', "movie video reel"],
+    ["Music",  '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>', "audio sound"],
+    ["Brush",  '<path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/>', "paint draw design"],
+    ["Wand",   '<path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/>', "magic sparkle"],
+    ["Feather",'<path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/>', "light pen"],
+    ["Pipette",'<path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.5.5a1 1 0 0 1 0 1.4l-3 3a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4l3-3a1 1 0 0 1 1.4 0z"/>', "eyedropper color pick"]
+  ]},
+
+  { cat: "Backend", icon: "database", icons: [
+    ["Database", '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>', "db sql storage"],
+    ["Server",   '<rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>', "host rack"],
+    ["Cloud",    '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>', "cloud hosting"],
+    ["Hard Drive", '<line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>', "disk storage"],
+    ["Network",  '<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>', "nodes topology"],
+    ["Lock",  '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', "secure auth"],
+    ["Unlock",'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>', "open insecure"],
+    ["Key",   '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>', "password token api key"],
+    ["Shield",'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>', "security safe"],
+    ["Git Branch", '<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>', "version control"],
+    ["Git Merge",  '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>', "pull request merge"],
+    ["Git Commit", '<circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/>', "commit hash"],
+    ["Workflow", '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>', "pipeline ci cd"],
+    ["Webhook", '<path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"/><path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"/><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"/>', "hook integration"],
+    ["Function", '<path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M12 8v8"/><path d="M8 12h8"/>', "f lambda serverless"],
+    ["Route", '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>', "api endpoint path"],
+    ["Container", '<path d="M22 7.5 12 2 2 7.5v9L12 22l10-5.5z"/><path d="M2 7.5 12 13l10-5.5"/><path d="M12 13v9"/>', "docker image"]
+  ]},
+
+  { cat: "Actions", icon: "edit", icons: [
+    ["Plus",     '<path d="M5 12h14"/><path d="M12 5v14"/>', "add new create"],
+    ["Minus",    '<path d="M5 12h14"/>', "remove subtract"],
+    ["Edit",     '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>', "pencil write"],
+    ["Trash",    '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>', "delete remove bin"],
+    ["Save",     '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>', "floppy disk store"],
+    ["Download", '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>', "save file"],
+    ["Upload",   '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>', "send file"],
+    ["Copy",     '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>', "duplicate clipboard"],
+    ["Clipboard",'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>', "paste"],
+    ["Share",    '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>', "social send"],
+    ["Link",     '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', "chain url"],
+    ["Filter",   '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>', "sort refine"],
+    ["Sort",     '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>', "order arrows"],
+    ["Refresh",  '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>', "reload sync"],
+    ["Rotate",   '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>', "undo redo"],
+    ["Zoom In",  '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>', "magnify plus"],
+    ["Zoom Out", '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>', "magnify minus"],
+    ["Maximize", '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>', "expand fullscreen"],
+    ["Minimize", '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>', "collapse exit"]
+  ]},
+
+  { cat: "Communication", icon: "message", icons: [
+    ["Mail",    '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>', "email envelope"],
+    ["Mail Open",'<path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/>', "read email inbox"],
+    ["Message Square", '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', "chat comment"],
+    ["Message Circle", '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>', "bubble chat"],
+    ["Send",    '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>', "submit paper plane"],
+    ["Phone",   '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>', "call telephone"],
+    ["Video",   '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>', "camera call meeting"],
+    ["Mic",     '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>', "microphone voice"],
+    ["At Sign", '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>', "mention email"],
+    ["Inbox",   '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>', "mail tray"],
+    ["Megaphone",'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>', "announce marketing"],
+    ["Headphones",'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>', "support audio"]
+  ]},
+
+  { cat: "Media", icon: "play", icons: [
+    ["Skip Back",    '<polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>', "previous track"],
+    ["Skip Forward", '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>', "next track"],
+    ["Volume",   '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>', "sound speaker"],
+    ["Volume X", '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>', "mute silent"],
+    ["Camera",   '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>', "photo capture"],
+    ["Monitor Play", '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="m10 8 5 3-5 3z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>', "watch video"],
+    ["Radio", '<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>', "live stream broadcast"],
+    ["Podcast", '<path d="M16.85 18.58a9 9 0 1 0-9.7 0"/><path d="M8 14a5 5 0 1 1 8 0"/><circle cx="12" cy="11" r="1"/><path d="M13.41 21a4 4 0 0 1-2.82 0"/>', "audio show"],
+    ["Clapperboard", '<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>', "movie clap"],
+    ["Captions", '<rect width="18" height="14" x="3" y="5" rx="2" ry="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/>', "subtitles cc"]
+  ]},
+
+  { cat: "Files & Data", icon: "folder", icons: [
+    ["File",       '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>', "document page"],
+    ["File Text",  '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>', "doc txt"],
+    ["File Code",  '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/>', "script source"],
+    ["Folder",     '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>', "directory"],
+    ["Folder Open",'<path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>', "directory open"],
+    ["Archive",    '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>', "zip box"],
+    ["Paperclip",  '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>', "attachment"],
+    ["Table",      '<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>', "grid data sheet"],
+    ["Pie Chart",  '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>', "analytics report"]
+  ]},
+
+  { cat: "Social", icon: "share", icons: [
+    ["Github",   '<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>', "git code repo"],
+    ["Linkedin", '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/>', "work professional"],
+    ["Twitter",  '<path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>', "tweet x bird"],
+    ["Facebook", '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>', "meta social"],
+    ["Instagram",'<rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>', "insta photos"],
+    ["Youtube",  '<path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/>', "video yt"],
+    ["Twitch",   '<path d="M21 2H3v16h5v4l4-4h5l4-4V2z"/><path d="M11 11V7"/><path d="M16 11V7"/>', "stream gaming"],
+    ["Reddit",   '<circle cx="12" cy="13" r="7"/><path d="M12 6a2 2 0 0 1 2-2c1 0 2 .8 2 2"/><circle cx="9" cy="13" r=".5" fill="currentColor"/><circle cx="15" cy="13" r=".5" fill="currentColor"/><path d="M9 16c1 1 5 1 6 0"/>', "forum community"],
+    ["Whatsapp", '<path d="M3 21l1.65-4.95A9 9 0 1 1 12 21a9 9 0 0 1-4.05-.95Z"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/>', "chat message"],
+    ["Telegram", '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>', "paper plane chat"]
+  ]},
+
+  { cat: "E-commerce", icon: "cart", icons: [
+    ["Shopping Cart", '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>', "basket buy checkout"],
+    ["Shopping Bag",  '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>', "store purchase"],
+    ["Credit Card",   '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>', "payment checkout"],
+    ["Wallet", '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>', "money balance"],
+    ["Dollar Sign",   '<line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', "money price currency"],
+    ["Tag",           '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>', "price label discount"],
+    ["Gift",   '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>', "present reward"],
+    ["Truck",  '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>', "shipping delivery"],
+    ["Package",'<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/>', "parcel order box"],
+    ["Receipt", '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>', "invoice bill"],
+    ["Percent", '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>', "discount sale"]
+  ]},
+
+  { cat: "Weather", icon: "sun", icons: [
+    ["Sun",         '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>', "sunny day light"],
+    ["Moon",        '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>', "night dark"],
+    ["Cloud Sun",   '<path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>', "partly cloudy"],
+    ["Cloud",       '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>', "cloudy overcast"],
+    ["Cloud Rain",  '<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>', "rainy wet"],
+    ["Cloud Snow",  '<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M8 15h.01"/><path d="M8 19h.01"/><path d="M12 17h.01"/><path d="M12 21h.01"/><path d="M16 15h.01"/><path d="M16 19h.01"/>', "snow winter"],
+    ["Cloud Lightning", '<path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"/><path d="m13 12-3 5h4l-3 5"/>', "storm thunder"],
+    ["Wind",        '<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>', "breeze air"],
+    ["Thermometer", '<path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>', "temperature hot cold"],
+    ["Umbrella",    '<path d="M12 22a2 2 0 0 0 2-2v-6"/><path d="M22 12a10 10 0 0 0-20 0Z"/>', "rain protection"],
+    ["Sunrise",     '<path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/>', "morning dawn"],
+    ["Sunset",      '<path d="M12 10V2"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/><path d="M16 18a4 4 0 0 0-8 0"/>', "evening dusk"]
+  ]},
+
+  { cat: "Devices", icon: "monitor", icons: [
+    ["Smartphone", '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>', "mobile phone iphone"],
+    ["Tablet",     '<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>', "ipad touch"],
+    ["Laptop",     '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>', "computer notebook"],
+    ["Monitor",    '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>', "desktop screen display"],
+    ["Tv",         '<rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>', "television screen"],
+    ["Watch",      '<circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/>', "smartwatch wearable"],
+    ["Keyboard",   '<path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/>', "typing input"],
+    ["Mouse",      '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>', "click pointer"],
+    ["Speaker",    '<rect width="16" height="20" x="4" y="2" rx="2"/><circle cx="12" cy="14" r="4"/><line x1="12" y1="6" x2="12.01" y2="6"/>', "audio sound box"],
+    ["Printer",    '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>', "print paper"],
+    ["Router",     '<rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6.01 18H6"/><path d="M10.01 18H10"/><path d="M15 10v4"/><path d="M17.84 7.17a4 4 0 0 0-5.66 0"/><path d="M20.66 4.34a8 8 0 0 0-11.31 0"/>', "wifi network modem"],
+    ["Battery",    '<rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="11" x2="6" y2="13"/>', "power charge"],
+    ["Plug",       '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>', "power socket energy"]
+  ]},
+
+  { cat: "Alerts & UI", icon: "alert", icons: [
+    ["Check",        '<path d="M20 6 9 17l-5-5"/>', "tick done"],
+    ["Check Check",  '<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>', "double tick read"],
+    ["Alert Circle", '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>', "warning error"],
+    ["Alert Triangle", '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', "danger caution"],
+    ["Info",         '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>', "about notice"],
+    ["Help Circle",  '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>', "question support faq"],
+    ["Eye",     '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>', "view show visible"],
+    ["Eye Off", '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>', "hide hidden invisible password"],
+    ["Heart",   '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>', "like love favorite"],
+    ["Bookmark",'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>', "save read later"],
+    ["Flag",    '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>', "report mark"],
+    ["Thumbs Up",   '<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>', "like approve"],
+    ["Thumbs Down", '<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>', "dislike reject"],
+    ["Smile",   '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>', "happy emoji face"],
+    ["Loader",  '<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>', "spinner loading progress"],
+    ["Calendar",'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>', "date schedule event"],
+    ["Clock",   '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', "time schedule watch"],
+    ["Map Pin", '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>', "location place marker"],
+    ["Copy Check", '<path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 11 9 18l-3-3"/><path d="M22 12v3"/>', "copied success tick"]
+  ]}
+];
+
+/* =========================================================
+   State
+   ========================================================= */
+let activeCat = "__all__";
+let selected  = null;   // {cat, name, body}
+let size      = 24;
+let stroke    = 2;
+let color     = "#e6e9f0";
+let activeTab = "svg";
+let query     = "";
+
+/* =========================================================
+   DOM
+   ========================================================= */
+const sidebar   = document.getElementById("sidebar");
+const grid      = document.getElementById("grid");
+const searchEl  = document.getElementById("search");
+const searchClr = document.getElementById("searchClear");
+const viewTitle = document.getElementById("viewTitle");
+const viewCount = document.getElementById("viewCount");
+const bigPreview= document.getElementById("bigPreview");
+const detailName= document.getElementById("detailName");
+const detailCat = document.getElementById("detailCat");
+const codeEl    = document.getElementById("code");
+const copyBtn   = document.getElementById("copyBtn");
+const tabsEl    = document.getElementById("tabs");
+const tabNote   = document.getElementById("tabNote");
+const toast     = document.getElementById("toast");
+const toastMsg  = document.getElementById("toastMsg");
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function formatBody(body) {
+  const parts = body.match(/<[^>]+>/g) || [body];
+  return parts.map((p) => "  " + p).join("\n");
+}
+
+function buildSvg(body, opts = {}) {
+  const s = opts.size ?? size;
+  const w = opts.stroke ?? stroke;
+  const indented = opts.indent !== false;
+  const inner = indented ? "\n" + formatBody(body) + "\n" : body;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+}
+
+function buildJsx(body) {
+  let jsx = buildSvg(body, { indent: false });
+  jsx = jsx.replace(/\bstroke-width=/g, "strokeWidth=")
+           .replace(/\bstroke-linecap=/g, "strokeLinecap=")
+           .replace(/\bstroke-linejoin=/g, "strokeLinejoin=")
+           .replace(/\bxmlns="[^"]*"\s*/g, "")
+           .replace(/class=/g, "className=");
+  return jsx;
+}
+
+function buildDataUri(body) {
+  const svg = buildSvg(body, { indent: false })
+    .replace(/currentColor/g, color);
+  const enc = encodeURIComponent(svg)
+    .replace(/'/g, "%27")
+    .replace(/"/g, "%22");
+  return `url("data:image/svg+xml,${enc}")`;
+}
+
+/* =========================================================
+   Sidebar build
+   ========================================================= */
+function countIcons(catName) {
+  if (catName === "__all__") {
+    return LIBRARY.reduce((s, c) => s + c.icons.length, 0);
+  }
+  const c = LIBRARY.find((x) => x.cat === catName);
+  return c ? c.icons.length : 0;
+}
+
+function buildSidebar() {
+  const total = countIcons("__all__");
+  let html = `<div class="cat-title">Library</div>`;
+  html += `<button class="cat active" data-cat="__all__">
+    <span class="ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+    </span>
+    <span class="nm">All icons</span>
+    <span class="ct">${total}</span>
+  </button>`;
+  html += `<div class="cat-title">Categories</div>`;
+  LIBRARY.forEach((c) => {
+    html += `<button class="cat" data-cat="${esc(c.cat)}">
+      <span class="ico">${categoryIcon(c.icon)}</span>
+      <span class="nm">${esc(c.cat)}</span>
+      <span class="ct">${c.icons.length}</span>
+    </button>`;
+  });
+  sidebar.innerHTML = html;
+
+  sidebar.querySelectorAll(".cat").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeCat = btn.dataset.cat;
+      sidebar.querySelectorAll(".cat").forEach((b) => b.classList.toggle("active", b === btn));
+      renderGrid();
+    });
+  });
+}
+
+function categoryIcon(name) {
+  const map = {
+    compass:   '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+    sparkles:  '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
+    layout:    '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+    code:      '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    database:  '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+    edit:      '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+    message:   '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    play:      '<path d="m5 3 14 9-14 9z"/>',
+    folder:    '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    share:     '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+    cart:      '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+    sun:       '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    monitor:   '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+    alert:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${map[name] || ""}</svg>`;
+}
+
+/* =========================================================
+   Grid render
+   ========================================================= */
+function getVisibleIcons() {
+  let list = [];
+  if (activeCat === "__all__") {
+    LIBRARY.forEach((c) => {
+      c.icons.forEach(([name, body, aliases]) => {
+        list.push({ cat: c.cat, name, body, aliases: aliases || "" });
+      });
+    });
+  } else {
+    const c = LIBRARY.find((x) => x.cat === activeCat);
+    if (c) {
+      c.icons.forEach(([name, body, aliases]) => {
+        list.push({ cat: c.cat, name, body, aliases: aliases || "" });
+      });
+    }
+  }
+
+  if (query.trim()) {
+    const q = query.trim().toLowerCase();
+    list = list.filter((it) =>
+      it.name.toLowerCase().includes(q) ||
+      it.cat.toLowerCase().includes(q) ||
+      it.aliases.toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+
+function renderGrid() {
+  const list = getVisibleIcons();
+  viewTitle.textContent = query.trim()
+    ? `Search: “${query.trim()}”`
+    : (activeCat === "__all__" ? "All icons" : activeCat);
+  viewCount.textContent = `· ${list.length} icon${list.length === 1 ? "" : "s"}`;
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <div>No icons match your search.</div>
+    </div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  list.forEach((item, idx) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.idx = idx;
+    const isSel =
+      selected &&
+      selected.name === item.name &&
+      selected.cat === item.cat;
+    if (isSel) card.classList.add("sel");
+
+    const glyph = document.createElement("div");
+    glyph.className = "glyph";
+    glyph.style.color = color;
+    glyph.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">${item.body}</svg>`;
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "name";
+    nameEl.textContent = item.name;
+    nameEl.title = item.name;
+
+    const mini = document.createElement("button");
+    mini.className = "mini-copy";
+    mini.title = "Copy SVG";
+    mini.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+    mini.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const svg = buildSvg(item.body);
+      copyText(svg, `Copied ${item.name}`);
+    });
+
+    card.appendChild(glyph);
+    card.appendChild(nameEl);
+    card.appendChild(mini);
+    card.addEventListener("click", () => selectIcon(item));
+    frag.appendChild(card);
+  });
+  grid.replaceChildren(frag);
+}
+
+/* =========================================================
+   Selection & detail panel
+   ========================================================= */
+function selectIcon(item) {
+  selected = item;
+  // re-render grid to update selected state
+  grid.querySelectorAll(".card").forEach((c) => c.classList.remove("sel"));
+  const cards = grid.querySelectorAll(".card");
+  const list = getVisibleIcons();
+  const idx = list.findIndex((x) => x.name === item.name && x.cat === item.cat);
+  if (cards[idx]) cards[idx].classList.add("sel");
+
+  // detail panel
+  bigPreview.innerHTML = `<div class="icon-holder" style="color:${color}">
+    ${buildSvg(item.body, { size: Math.min(size, 120), indent: false })}
+  </div>`;
+
+  detailName.innerHTML = `<span>${esc(item.name)}</span>`;
+  detailCat.textContent = item.cat;
+
+  renderCode();
+  copyBtn.disabled = false;
+}
+
+function renderCode() {
+  if (!selected) return;
+  const body = selected.body;
+
+  if (activeTab === "svg") {
+    codeEl.textContent = buildSvg(body);
+    tabNote.innerHTML =
+      "Paste anywhere in your HTML. The icon inherits text color via <b>currentColor</b>.";
+  } else if (activeTab === "jsx") {
+    codeEl.textContent = buildJsx(body);
+    tabNote.innerHTML =
+      "Ready for React / Next.js. Drop it straight into a component file.";
+  } else {
+    codeEl.textContent = buildDataUri(body);
+    tabNote.innerHTML =
+      "Use as <b>background-image</b> in CSS. The color is baked in from the picker above.";
+  }
+}
+
+tabsEl.addEventListener("click", (e) => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
+  activeTab = t.dataset.tab;
+  tabsEl.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === t));
+  renderCode();
+});
+
+/* =========================================================
+   Topbar controls
+   ========================================================= */
+document.getElementById("size").addEventListener("input", (e) => {
+  size = clampNum(parseInt(e.target.value, 10) || 24, 12, 128);
+  if (selected) {
+    bigPreview.querySelector(".icon-holder").innerHTML =
+      buildSvg(selected.body, { size: Math.min(size, 120), indent: false });
+  }
+  renderCode();
+});
+
+document.getElementById("stroke").addEventListener("change", (e) => {
+  stroke = parseFloat(e.target.value);
+  renderGrid();
+  if (selected) {
+    bigPreview.querySelector(".icon-holder").innerHTML =
+      buildSvg(selected.body, { size: Math.min(size, 120), indent: false });
+  }
+  renderCode();
+});
+
+document.getElementById("color").addEventListener("input", (e) => {
+  color = e.target.value;
+  renderGrid();
+  if (selected) bigPreview.querySelector(".icon-holder").style.color = color;
+  renderCode();
+});
+
+function clampNum(v, a, b) { return Math.min(b, Math.max(a, v)); }
+
+/* =========================================================
+   Search
+   ========================================================= */
+searchEl.addEventListener("input", () => {
+  query = searchEl.value;
+  searchClr.classList.toggle("vis", !!query);
+  renderGrid();
+});
+
+searchClr.addEventListener("click", () => {
+  searchEl.value = "";
+  query = "";
+  searchClr.classList.remove("vis");
+  searchEl.focus();
+  renderGrid();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "/" && document.activeElement !== searchEl &&
+      document.activeElement.tagName !== "INPUT" &&
+      document.activeElement.tagName !== "TEXTAREA") {
+    e.preventDefault();
+    searchEl.focus();
+    searchEl.select();
+  }
+  if (e.key === "Escape" && document.activeElement === searchEl) {
+    searchEl.blur();
+  }
+});
+
+/* =========================================================
+   Copy helpers
+   ========================================================= */
+async function copyText(text, msg) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  showToast(msg || "Copied!");
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  toastMsg.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+}
+
+copyBtn.addEventListener("click", () => {
+  if (!selected) return;
+  copyText(codeEl.textContent, `Copied ${selected.name} (${activeTab.toUpperCase()})`);
+});
+
+/* =========================================================
+   Copy all visible
+   ========================================================= */
+document.getElementById("copyAllBtn").addEventListener("click", () => {
+  const list = getVisibleIcons();
+  if (!list.length) return;
+  const all = list.map((it) =>
+    `<!-- ${it.name} · ${it.cat} -->\n${buildSvg(it.body)}`
+  ).join("\n\n");
+  copyText(all, `Copied ${list.length} icons`);
+});
+
+/* =========================================================
+   Init
+   ========================================================= */
+buildSidebar();
+renderGrid();
+
+})();
+</script>
+</body>
+</html>
